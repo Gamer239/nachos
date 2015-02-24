@@ -16,15 +16,25 @@ int dirCount[2];
  * A car arrives at the bridge.
  */
 void ArriveBridge(int direction) {
+
+
 	dirLock[direction]->Acquire();
 	dirCount[direction]++;
+	//if we're the first to arrive then wait for the travel direction
 	if (dirCount[direction] == 1) {
 		travel->Acquire();
 	}
 	dirLock[direction]->Release();
+	
+	// wait to cross the bridge
 	monitor->Acquire();
+	//since we're using mesa style we need a while loop check
 	while (onBridge >= 3)
+	{
+		// give up access to our monitor while we wait
 		crossingCV->Wait(monitor);
+	}
+	//update the bridge count
 	onBridge++;
 	monitor->Release();	
 }
@@ -40,10 +50,17 @@ void CrossBridge(int direction) {
 }
 
 void ExitBridge(int direction) {
+
+	//reacuire the monitor and decrement our bridge count
 	monitor->Acquire();
 	onBridge--;
+	
+	//signal for more cars to pass
 	crossingCV->Signal(monitor);
 	monitor->Release();
+	
+	//grab our side's lock then decrement access 
+	// and possibly release the signal flag
 	dirLock[direction]->Acquire();
 	dirCount[direction]--;
 	if (dirCount[direction] == 0) {
@@ -62,6 +79,7 @@ void ThreadTest() {
 
 	Thread *t;
 
+	//init our variables
 	crossingCV = new Condition("condition variable");
 
 	monitor = new Lock("monitor lock");

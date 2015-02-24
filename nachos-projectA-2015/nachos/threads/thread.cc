@@ -35,6 +35,8 @@
 #ifdef CHANGED
 Thread::Thread(char* threadName)
 {
+	//set a standard priority for threads that did
+	//not specify one
 	Thread(threadName, 1);
 }
 
@@ -328,10 +330,16 @@ Thread::RestoreUserState()
 #endif
 
 #ifdef CHANGED
+/*
+ * get the priority of the current thread
+ */
 int Thread::getPriority() {
 	return threadPriority;
 }
 
+/*
+ * set the priority of the current thread
+ */
 void Thread::setPriority(int priority) {
 	threadPriority = priority;
 }

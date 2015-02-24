@@ -128,16 +128,25 @@ Condition::~Condition() {
 }
 
 void Condition::Wait(Lock* conditionLock) { 
+
+	//update the num waiters count and release
+	//control of the monitor
 	internalMutex->Acquire();
 	numWaiters++;
 	conditionLock->Release();
 	internalMutex->Release();
+	
+	//wait until the condition is true
 	sem->P();
+	
+	//wait until the monitor is available again
 	conditionLock->Acquire();
 }
 
 void Condition::Signal(Lock* conditionLock) {
 	internalMutex->Acquire();
+	
+	//signal a waiting thread if one exists
 	if (numWaiters > 0) {
 		numWaiters--;
 		sem->V();
@@ -147,6 +156,8 @@ void Condition::Signal(Lock* conditionLock) {
 
 void Condition::Broadcast(Lock* conditionLock) { 
 	internalMutex->Acquire();
+	
+	//signal all waiting threads
 	while (numWaiters > 0) {
 		numWaiters--;
 		sem->V();
