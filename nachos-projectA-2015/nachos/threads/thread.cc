@@ -32,8 +32,13 @@
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
+#ifdef CHANGED
 Thread::Thread(char* threadName)
 {
+	Thread(threadName, 1);
+}
+
+Thread::Thread(char* threadName, int priority) {
     name = threadName;
     stackTop = NULL;
     stack = NULL;
@@ -41,7 +46,9 @@ Thread::Thread(char* threadName)
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
+	threadPriority = priority;
 }
+#endif
 
 //----------------------------------------------------------------------
 // Thread::~Thread
@@ -317,4 +324,16 @@ Thread::RestoreUserState()
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
 }
+
 #endif
+
+#ifdef CHANGED
+int Thread::getPriority() {
+	return threadPriority;
+}
+
+void Thread::setPriority(int priority) {
+	threadPriority = priority;
+}
+#endif
+

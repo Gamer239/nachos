@@ -100,13 +100,57 @@ Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
-Lock::Lock(char* debugName) {}
-Lock::~Lock() {}
-void Lock::Acquire() {}
-void Lock::Release() {}
+#ifdef CHANGED
+Lock::Lock(char* debugName) {
+	sem = new Semaphore("Lock Semaphore", 1);
+}
 
-Condition::Condition(char* debugName) { }
-Condition::~Condition() { }
-void Condition::Wait(Lock* conditionLock) { ASSERT(FALSE); }
-void Condition::Signal(Lock* conditionLock) { }
-void Condition::Broadcast(Lock* conditionLock) { }
+Lock::~Lock() {
+	delete sem;
+}
+
+void Lock::Acquire() {
+	sem->P();
+}
+void Lock::Release() {
+	sem->V();
+}
+
+Condition::Condition(char* debugName) { 
+	numWaiters = 0;
+	sem = new Semaphore("Condition Semaphore", 0);
+	internalMutex = new Lock("Condition Lock");	
+}
+
+Condition::~Condition() { 
+	delete sem;
+	delete internalMutex;
+}
+
+void Condition::Wait(Lock* conditionLock) { 
+	internalMutex->Acquire();
+	numWaiters++;
+	conditionLock->Release();
+	internalMutex->Release();
+	sem->P();
+	conditionLock->Acquire();
+}
+
+void Condition::Signal(Lock* conditionLock) {
+	internalMutex->Acquire();
+	if (numWaiters > 0) {
+		numWaiters--;
+		sem->V();
+	}
+	internalMutex->Release();
+}
+
+void Condition::Broadcast(Lock* conditionLock) { 
+	internalMutex->Acquire();
+	while (numWaiters > 0) {
+		numWaiters--;
+		sem->V();
+	}
+	internalMutex->Release();
+}
+#endif
