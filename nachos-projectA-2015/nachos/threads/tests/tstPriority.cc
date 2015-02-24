@@ -53,25 +53,25 @@ ThreadTest()
     DEBUG('t', "Entering ThreadTest");
     Thread *t;
 
-  for (int i=0;i<NUMTHREADS;i++) {	   
+	for (int i=0;i<NUMTHREADS;i++) {	   
 
-        /* Alternate creation of high and low priority threads so
-           simply pulling off ready queue in creation order should 
-           cause execution of low than high priority thread (Not
-           what we want) 
+		/* Alternate creation of high and low priority threads so
+		   simply pulling off ready queue in creation order should 
+		   cause execution of low than high priority thread (Not
+		   what we want) 
 
-           Expect all the incrementers will run then all the
-           decrementers, if priority scheduling implemented
-	*/
-          
-        /* Create low priorty thread */
-        t = new Thread("priority 1",1);
-        t->Fork(Decrement, i);
+		   Expect all the incrementers will run then all the
+		   decrementers, if priority scheduling implemented */
+		   
 
-        /* Create high priority thread */
-        t = new Thread("priority 0",0);
-        t->Fork(Increment, NUMTHREADS+i);
-    }    
+		/* Create low priorty thread */
+		t = new Thread("priority 1",1);
+		t->Fork(Decrement, i);
+
+		/* Create high priority thread */
+		t = new Thread("priority 0",0);
+		t->Fork(Increment, NUMTHREADS+i);
+	}
+
 
 }
-
