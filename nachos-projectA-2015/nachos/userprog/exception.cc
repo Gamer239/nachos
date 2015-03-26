@@ -51,11 +51,74 @@
 void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
 
-	if ((which == SyscallException) && (type == SC_Halt)) {
-		DEBUG('a', "Shutdown, initiated by user program.\n");
-		interrupt->Halt();
-	} else {
-		printf("Unexpected user mode exception %d %d\n", which, type);
-		ASSERT(FALSE);
+	if (which == SyscallException) {
+		switch (type) {
+			case SC_Halt:
+				printf("Shutdown, initiated by user program.\n");
+				interrupt->Halt();
+				break;
+
+			case SC_Exit:
+				printf("Call to Syscall Exit (SC_Exit).\n");
+				currentThread->space->RestoreState();
+				// need to make sure we actually set reg 2 to the return value	
+				machine->WriteRegister(2, 0); 
+				break;
+
+			case SC_Exec:
+				printf("Call to Syscall Exec (SC_Exec).\n");
+				printf("machine->ReadRegister(4): %s\n", (char *) machine->ReadRegister(4));
+				// StartProcess(machine->ReadRegister(4));
+				break;
+
+			case SC_Join:
+				printf("Call to Syscall Join (SC_Join).\n");
+				break;
+
+			case SC_Create:
+				printf("Call to Syscall Create (SC_Create).\n");
+				break;
+
+			case SC_Open:
+				printf("Call to Syscall Open (SC_Open).\n");
+				break;
+
+			case SC_Read: {
+				// printf("Call to Syscall Read (SC_Read).\n");
+				int size = (int) machine->ReadRegister(5);
+				OpenFileId fileid = (int) machine->ReadRegister(6);
+				// printf("size: %d, id: %d\n", size, fileid);
+				// OpenFile file = OpenFile(fileid);
+				// printf("file opened\n");
+				// char* buffer = (char *) machine->WriteMem(machine->ReadRegister(4));
+				break;
+						  }
+
+			case SC_Write:
+				printf("Call to Syscall Write (SC_Write).\n");
+				break;
+
+			case SC_Close:
+				printf("Call to Syscall Close (SC_Close).\n");
+				break;
+
+			case SC_Fork:
+				printf("Call to Syscall Fork (SC_Fork).\n");
+				break;
+
+			case SC_Yield:
+				printf("Call to Syscall Yield (SC_Yield).\n");
+				break;
+
+			default:
+				printf("Unexpected user mode exception %d %d\n", which, type);
+				ASSERT(FALSE);
+				break;
+		}
 	}
+
+	machine->WriteRegister(PrevPCReg, machine->ReadRegister(PrevPCReg) + 4);
+	machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+	machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
+
 }
