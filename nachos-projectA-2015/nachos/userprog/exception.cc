@@ -85,8 +85,13 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Read: {
 				// printf("Call to Syscall Read (SC_Read).\n");
+				char * addr = (char *) machine->ReadRegister(4);
 				int size = (int) machine->ReadRegister(5);
 				OpenFileId fileid = (int) machine->ReadRegister(6);
+
+				// read from file
+				// put it into buffer at addr
+
 				// printf("size: %d, id: %d\n", size, fileid);
 				// OpenFile file = OpenFile(fileid);
 				// printf("file opened\n");
