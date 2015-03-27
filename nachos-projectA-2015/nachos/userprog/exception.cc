@@ -65,60 +65,98 @@ void ExceptionHandler(ExceptionType which) {
 				machine->WriteRegister(2, 0); 
 				break;
 
-			case SC_Exec:
-				printf("Call to Syscall Exec (SC_Exec).\n");
-				printf("machine->ReadRegister(4): %s\n", (char *) machine->ReadRegister(4));
-				// StartProcess(machine->ReadRegister(4));
-				break;
-
-			case SC_Join:
-				printf("Call to Syscall Join (SC_Join).\n");
-				break;
-
-			case SC_Create:
-				printf("Call to Syscall Create (SC_Create).\n");
-				break;
-
-			case SC_Open:
-				printf("Call to Syscall Open (SC_Open).\n");
-				break;
-
-			case SC_Read: {
-				// printf("Call to Syscall Read (SC_Read).\n");
-				char * addr = (char *) machine->ReadRegister(4);
-				int size = (int) machine->ReadRegister(5);
-				OpenFileId fileid = (int) machine->ReadRegister(6);
-
-				// read from file
-				// put it into buffer at addr
-
-				// printf("size: %d, id: %d\n", size, fileid);
-				// OpenFile file = OpenFile(fileid);
-				// printf("file opened\n");
-				// char* buffer = (char *) machine->WriteMem(machine->ReadRegister(4));
-				break;
+			case SC_Exec: {
+							  printf("Call to Syscall Exec (SC_Exec).\n");
+							  char buf[64];
+							  bzero(buf, 64);
+							  int addr = (int) machine->ReadRegister(4);
+							  // printf("got addr: %d\n", addr);
+							  char c;
+							  int i = 0;
+							  while (c != '\0') {
+								machine->ReadMem(addr + i, 1, (int *) &c);
+								// printf("got c: %c\n", c);
+								sprintf(buf + strlen(buf), "%c", c);
+								// printf("buf is: %s\n", buf);
+								i++;
+							  }
+							  printf("Would Exec: %s\n", buf); 
+							  break;
 						  }
 
-			case SC_Write:
-				printf("Call to Syscall Write (SC_Write).\n");
-				break;
+			case SC_Join: {
+							  printf("Call to Syscall Join (SC_Join).\n");
+							  printf("join(spaceid = %d)\n", machine->ReadRegister(4));
+							  break;
+						  }
+
+			case SC_Create:
+						  printf("Call to Syscall Create (SC_Create).\n");
+						  break;
+
+			case SC_Open:
+						  printf("Call to Syscall Open (SC_Open).\n");
+						  break;
+
+			case SC_Read: {
+							  // printf("Call to Syscall Read (SC_Read).\n");
+							  char * addr = (char *) machine->ReadRegister(4);
+							  int size = (int) machine->ReadRegister(5);
+							  OpenFileId fileid = (int) machine->ReadRegister(6);
+
+							  int read = 0;
+							  char buf;
+							  bool write;
+							  while (read < size) {
+								  // printf("About to read, current read: %d\n", read);
+								  Read(fileid, &buf, 1);
+								  // printf("Read char %c\n", buf);
+								  write = machine->WriteMem((int) (addr + read), 1, (int) buf);
+								  // printf("Write was %d\n", write);
+								  read++;
+							  }
+
+							  machine->WriteRegister(2, read);
+							  break;
+						  }
+
+			case SC_Write: {
+
+							   char * addr = (char *) machine->ReadRegister(4);
+							   int size = (int) machine->ReadRegister(5);
+							   OpenFileId fileid = (int) machine->ReadRegister(6);
+
+							   int wrote = 0;
+							   char buf;
+							   bool read;
+							   while (wrote < size && buf != EOF) {
+								   read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);
+								   WriteFile(fileid, &buf, 1);
+								   wrote++;
+							   }
+
+							   machine->WriteRegister(2, read);
+
+							   break;
+						   }
 
 			case SC_Close:
-				printf("Call to Syscall Close (SC_Close).\n");
-				break;
+						   printf("Call to Syscall Close (SC_Close).\n");
+						   break;
 
 			case SC_Fork:
-				printf("Call to Syscall Fork (SC_Fork).\n");
-				break;
+						   printf("Call to Syscall Fork (SC_Fork).\n");
+						   printf("fork(%d)\n", machine->ReadRegister(4));
+						   break;
 
 			case SC_Yield:
-				printf("Call to Syscall Yield (SC_Yield).\n");
-				break;
+						   printf("Call to Syscall Yield (SC_Yield).\n");
+						   break;
 
 			default:
-				printf("Unexpected user mode exception %d %d\n", which, type);
-				ASSERT(FALSE);
-				break;
+						   printf("Unexpected user mode exception %d %d\n", which, type);
+						   ASSERT(FALSE);
+						   break;
 		}
 	}
 
