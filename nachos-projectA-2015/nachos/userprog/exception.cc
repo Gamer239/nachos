@@ -50,6 +50,10 @@
 
 void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
+	
+	char c, buf[64];
+	bzero(buf, 64);
+	int addr, i = 0;
 
 	if (which == SyscallException) {
 		switch (type) {
@@ -60,24 +64,19 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Exit:
 				printf("Call to Syscall Exit (SC_Exit).\n");
-				currentThread->space->RestoreState();
-				// need to make sure we actually set reg 2 to the return value	
+				// I don't think we need to care about the value passed to use
+				// by the user program's Exit call.
+				currentThread->Finish();
 				machine->WriteRegister(2, 0); 
 				break;
 
 			case SC_Exec: {
 							  printf("Call to Syscall Exec (SC_Exec).\n");
-							  char buf[64];
-							  bzero(buf, 64);
-							  int addr = (int) machine->ReadRegister(4);
-							  // printf("got addr: %d\n", addr);
-							  char c;
-							  int i = 0;
+							  addr = (int) machine->ReadRegister(4);
+							  i = 0;
 							  while (c != '\0') {
 								machine->ReadMem(addr + i, 1, (int *) &c);
-								// printf("got c: %c\n", c);
 								sprintf(buf + strlen(buf), "%c", c);
-								// printf("buf is: %s\n", buf);
 								i++;
 							  }
 							  printf("Would Exec: %s\n", buf); 
@@ -90,29 +89,37 @@ void ExceptionHandler(ExceptionType which) {
 							  break;
 						  }
 
-			case SC_Create:
-						  printf("Call to Syscall Create (SC_Create).\n");
-						  break;
+			case SC_Create: {
+								printf("Call to Syscall Create (SC_Create).\n");
+								addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+								while (c != '\0' && i < 64) {
+									machine->ReadMem(addr + i, 1, (int *) &c);
+									sprintf(buf + strlen(buf), "%c", c);
+									i++;
+								}
+								
+								printf("Creating: %s\n", buf);
+								bool created = fileSystem->Create(buf, 128);
+								printf("Created: %d\n", created);
 
+								break;
+							}
+			
 			case SC_Open:
 						  printf("Call to Syscall Open (SC_Open).\n");
 						  break;
 
 			case SC_Read: {
-							  // printf("Call to Syscall Read (SC_Read).\n");
-							  char * addr = (char *) machine->ReadRegister(4);
-							  int size = (int) machine->ReadRegister(5);
-							  OpenFileId fileid = (int) machine->ReadRegister(6);
+							  addr = machine->ReadRegister(4);
+							  int size = machine->ReadRegister(5);
+							  OpenFileId fileid = machine->ReadRegister(6);
 
 							  int read = 0;
 							  char buf;
 							  bool write;
 							  while (read < size) {
-								  // printf("About to read, current read: %d\n", read);
 								  Read(fileid, &buf, 1);
-								  // printf("Read char %c\n", buf);
-								  write = machine->WriteMem((int) (addr + read), 1, (int) buf);
-								  // printf("Write was %d\n", write);
+								  write = machine->WriteMem(addr + read, 1, (int) buf);
 								  read++;
 							  }
 
