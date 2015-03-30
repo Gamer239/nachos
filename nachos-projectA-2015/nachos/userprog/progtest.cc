@@ -10,7 +10,7 @@
 
 #include "copyright.h"
 #include "system.h"
-#include "console.h"
+#include "synchconsole.h"
 #include "addrspace.h"
 #include "synch.h"
 
@@ -50,7 +50,7 @@ StartProcess(char *filename)
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.
 
-static Console *console;
+static SynchConsole *console;
 static Semaphore *readAvail;
 static Semaphore *writeDone;
 
@@ -73,15 +73,19 @@ ConsoleTest (char *in, char *out)
 {
     char ch;
 
-    console = new Console(in, out, ReadAvail, WriteDone, 0);
+    console = new SynchConsole(in, out);
     readAvail = new Semaphore("read avail", 0);
     writeDone = new Semaphore("write done", 0);
-    
+    printf("\nstarting the console\n");
     for (;;) {
-	readAvail->P();		// wait for character to arrive
+	//readAvail->P();		// wait for character to arrive
+    //printf("\nget a char\n");
 	ch = console->GetChar();
+    //printf("\nread char\n");
 	console->PutChar(ch);	// echo it!
-	writeDone->P() ;        // wait for write to finish
+    //printf("\nput char\n");
+    //printf("\nput char\n");
+	//writeDone->P() ;        // wait for write to finish
 	if (ch == 'q') return;  // if q, quit
     }
 }
