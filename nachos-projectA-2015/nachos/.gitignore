@@ -4,3 +4,4 @@ nachos
 threads/Makefile
 threads/swtch.s
 bin/
+!test/*.c
