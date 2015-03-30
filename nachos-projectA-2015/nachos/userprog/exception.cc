@@ -114,7 +114,9 @@ void ExceptionHandler(ExceptionType which) {
 								sprintf(buf + strlen(buf), "%c", c);
 								i++;
 							}
+	
 
+							// this is not right
 							int fileId = (int) fileSystem->Open(buf);
 							printf("got file: %d\n", fileId);
 							machine->WriteRegister(2, fileId);
