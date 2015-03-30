@@ -3,3 +3,4 @@ tags
 nachos
 threads/Makefile
 threads/swtch.s
+bin/

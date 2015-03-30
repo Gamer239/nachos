@@ -50,7 +50,7 @@
 
 void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
-	
+
 	char c, buf[64];
 	bzero(buf, 64);
 	int addr, i = 0;
@@ -75,9 +75,9 @@ void ExceptionHandler(ExceptionType which) {
 							  addr = (int) machine->ReadRegister(4);
 							  i = 0;
 							  while (c != '\0') {
-								machine->ReadMem(addr + i, 1, (int *) &c);
-								sprintf(buf + strlen(buf), "%c", c);
-								i++;
+								  machine->ReadMem(addr + i, 1, (int *) &c);
+								  sprintf(buf + strlen(buf), "%c", c);
+								  i++;
 							  }
 							  printf("Would Exec: %s\n", buf); 
 							  break;
@@ -97,17 +97,29 @@ void ExceptionHandler(ExceptionType which) {
 									sprintf(buf + strlen(buf), "%c", c);
 									i++;
 								}
-								
-								printf("Creating: %s\n", buf);
-								bool created = fileSystem->Create(buf, 128);
-								printf("Created: %d\n", created);
 
+								// not sure how big the file should be.
+								// works for now thought
+								fileSystem->Create(buf, 128);
+
+								// no return value for Create
 								break;
 							}
-			
-			case SC_Open:
-						  printf("Call to Syscall Open (SC_Open).\n");
-						  break;
+
+			case SC_Open: {
+							printf("Call to Syscall Open (SC_Open).\n");
+							addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+							while (c != '\0' && i < 64) {
+								machine->ReadMem(addr + i, 1, (int *) &c);
+								sprintf(buf + strlen(buf), "%c", c);
+								i++;
+							}
+
+							int fileId = (int) fileSystem->Open(buf);
+							printf("got file: %d\n", fileId);
+							machine->WriteRegister(2, fileId);
+							break;
+						  }
 
 			case SC_Read: {
 							  addr = machine->ReadRegister(4);

@@ -15,9 +15,6 @@
 int
 main()
 {
-    Create("yolo");
-	int file = Open("yolo");
-	char* stuff = "yolofile";
-	Write(stuff, 8, file);
-	Exit(0);
+	Halt();/* not reached */
+	return 0;
 }
