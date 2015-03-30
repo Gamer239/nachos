@@ -31,6 +31,7 @@ class AddrSpace {
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
+	bool GetFull();			// so we can check if space creation failed
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
@@ -38,6 +39,7 @@ class AddrSpace {
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
 	PageMap* pageMap;
+	bool memFull;
 };
 
 #endif // ADDRSPACE_H

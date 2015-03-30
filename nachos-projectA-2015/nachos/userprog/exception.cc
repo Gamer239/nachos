@@ -51,7 +51,7 @@
 void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
 
-	char c, buf[64];
+	char c, buf[64], filename[64];
 	bzero(buf, 64);
 	int addr, i = 0;
 
@@ -71,15 +71,42 @@ void ExceptionHandler(ExceptionType which) {
 				break;
 
 			case SC_Exec: {
-							  printf("Call to Syscall Exec (SC_Exec).\n");
-							  addr = (int) machine->ReadRegister(4);
-							  i = 0;
-							  while (c != '\0') {
+							  addr = machine->ReadRegister(4);
+							  do {
 								  machine->ReadMem(addr + i, 1, (int *) &c);
 								  sprintf(buf + strlen(buf), "%c", c);
 								  i++;
+							  } while (c != '\0');
+
+							  printf("Call to Syscall Exec (SC_Exec).\n");
+							  printf("Execing: %s\n", buf); 
+
+							  OpenFile *executable = fileSystem->Open(buf);
+							  AddrSpace *space;
+
+							  if (executable == NULL) {
+								  printf("SC_Exec Error: Unable to open file %s\n", buf);
+								  break;
 							  }
-							  printf("Would Exec: %s\n", buf); 
+
+							  Thread *thread = new Thread(buf);
+							  space = new AddrSpace(executable);
+
+							  delete executable;
+
+							  if (space->GetFull()) {
+								  printf("Error: Exec: Insufficient memory to start process\n");
+								  delete space;
+								  break;
+							  }
+
+							  space->InitRegisters();
+							  space->RestoreState();
+
+							  printf("running %s\n", buf);
+
+							  machine->Run();
+							  ASSERT(FALSE);
 							  break;
 						  }
 
@@ -107,19 +134,19 @@ void ExceptionHandler(ExceptionType which) {
 							}
 
 			case SC_Open: {
-							printf("Call to Syscall Open (SC_Open).\n");
-							addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
-							while (c != '\0' && i < 64) {
-								machine->ReadMem(addr + i, 1, (int *) &c);
-								sprintf(buf + strlen(buf), "%c", c);
-								i++;
-							}
-	
-							// this is not right
-							int fileId = (int) fileSystem->Open(buf);
-							printf("got file: %d\n", fileId);
-							machine->WriteRegister(2, fileId);
-							break;
+							  printf("Call to Syscall Open (SC_Open).\n");
+							  addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+							  while (c != '\0' && i < 64) {
+								  machine->ReadMem(addr + i, 1, (int *) &c);
+								  sprintf(buf + strlen(buf), "%c", c);
+								  i++;
+							  }
+
+							  // this is not right
+							  int fileId = (int) fileSystem->Open(buf);
+							  printf("got file: %d\n", fileId);
+							  machine->WriteRegister(2, fileId);
+							  break;
 						  }
 
 			case SC_Read: {
@@ -185,3 +212,5 @@ void ExceptionHandler(ExceptionType which) {
 	machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 
 }
+
+

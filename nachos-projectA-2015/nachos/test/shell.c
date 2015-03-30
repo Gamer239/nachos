@@ -9,6 +9,9 @@ main()
 	char prompt[2], ch, buffer[60], bytesbuf[10];
 	int i;
 	int bytes;
+	char *argv[1];
+
+	argv[0] = "\0";
 
 	prompt[0] = '-';
 	prompt[1] = '-';
@@ -23,7 +26,7 @@ main()
 		buffer[--i] = '\0';
 		Write(bytesbuf, 2, output);
 		if(i > 0) {
-			newProc = Exec(buffer);
+			newProc = Exec(buffer, argv);
 			Join(newProc);
 		}
 	}

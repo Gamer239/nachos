@@ -87,15 +87,19 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 
-// first, set up the translation 
+// first, set up the translation
+	memFull = false; 
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 		pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 		// find first open pages
 		pageTable[i].physicalPage = pageMap->Find();
-		printf("Allocated physical page %d as virt page %d\n", pageTable[i].physicalPage,
-			pageTable[i].virtualPage);
-		ASSERT(pageTable[i].physicalPage != -1);
+		// printf("Allocated physical page %d as virt page %d\n", pageTable[i].physicalPage,
+		// pageTable[i].virtualPage);
+		if (pageTable[i].physicalPage == -1) {
+			memFull = true;
+			break;
+		}
 		pageTable[i].valid = TRUE;
 		pageTable[i].use = FALSE;
 		pageTable[i].dirty = FALSE;
@@ -132,7 +136,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 AddrSpace::~AddrSpace()
 {
 	// return the pages we were using
-	for (int i = 0; i < numPages; i++) {
+	for (unsigned int i = 0; i < numPages; i++) {
 		pageMap->Clear(pageTable[i].physicalPage);
 	}
 	delete pageTable;
@@ -195,4 +199,8 @@ void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+}
+
+bool AddrSpace::GetFull() {
+	return memFull;
 }

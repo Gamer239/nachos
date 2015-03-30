@@ -90,7 +90,7 @@ Machine::ReadMem(int addr, int size, int *value)
     int data;
     ExceptionType exception;
     int physicalAddress;
-    
+
     DEBUG('a', "Reading VA 0x%x, size %d\n", addr, size);
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
