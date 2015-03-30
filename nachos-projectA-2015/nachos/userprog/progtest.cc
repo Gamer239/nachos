@@ -23,7 +23,8 @@
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
+
+	OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
 	if (executable == NULL) {

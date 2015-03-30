@@ -60,7 +60,8 @@ extern void Cleanup();
 static void
 TimerInterruptHandler(int dummy)
 {
-    if (interrupt->getStatus() != IdleMode)
+	// only do this every N timer ticks?
+	if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
 }
 

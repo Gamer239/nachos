@@ -6,3 +6,4 @@ threads/swtch.s
 bin/
 test/*
 !test/*.c
+userprog/swtch.s

@@ -37,7 +37,7 @@ class AddrSpace {
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-	PageMap* pagemap;
+	PageMap* pageMap;
 };
 
 #endif // ADDRSPACE_H

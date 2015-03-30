@@ -115,7 +115,6 @@ void ExceptionHandler(ExceptionType which) {
 								i++;
 							}
 	
-
 							// this is not right
 							int fileId = (int) fileSystem->Open(buf);
 							printf("got file: %d\n", fileId);
