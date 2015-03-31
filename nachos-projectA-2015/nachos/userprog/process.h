@@ -19,6 +19,8 @@ class Process {
 
 		static std::map<int, Process*>* GetProcMap();
 
+		Thread * GetThread();
+
 	private: 
 		int id;
 		Process * parent;

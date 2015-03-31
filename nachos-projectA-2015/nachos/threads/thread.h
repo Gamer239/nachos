@@ -81,6 +81,8 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 #ifdef CHANGED
 	int threadPriority;
+	int id;
+	static int nextId;
 #endif
 
   public:
@@ -110,6 +112,7 @@ class Thread {
 #ifdef CHANGED
 	int getPriority();
 	void setPriority(int priority);
+	int GetId();
 #endif
 
   private:

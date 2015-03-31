@@ -69,8 +69,24 @@ SpaceId exec(char *filename) {
 
 	Thread *thread = new Thread(filename, 0);
 	space = new AddrSpace(executable);
-	Process *process = new Process(thread, space->GetId());
+	int parentId = currentThread->GetId();
 
+	Process *child = new Process(thread, thread->GetId());
+	Process *parent;
+
+	// in case our parent thread somehow was not put into the procmap
+	if (Process::GetProcMap()->find(parentId) != Process::GetProcMap()->end()) {
+		parent = Process::GetProcMap()->at(parentId);
+		printf("Parent of %s is %s\n", thread->getName(), parent->GetThread()->getName());
+	} else {
+		printf("we didn't find it in the procmap\n");
+		parent = new Process(currentThread, parentId);
+		parent->AddChild(child);
+		Process::GetProcMap()->insert(std::pair<int, Process*>(parentId, parent));
+	}
+
+	child->SetParent(parent);
+	
 	delete executable;
 
 	// check if the returned address space failed to allocate
@@ -88,7 +104,7 @@ SpaceId exec(char *filename) {
 	thread->Fork(startProcess, 0);
 	currentThread->Yield();
 
-	return space->GetId();
+	return child->GetThread()->GetId();
 
 
 }
@@ -127,7 +143,6 @@ void ExceptionHandler(ExceptionType which) {
 						i++;
 					} while (c != '\0');
 
-					printf("Call to Syscall Exec (SC_Exec).\n");
 					printf("Execing: %s\n", buf); 
 					int ret = exec(buf);
 

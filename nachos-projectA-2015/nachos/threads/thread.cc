@@ -24,6 +24,8 @@
 					// execution stack, for detecting 
 					// stack overflows
 
+int Thread::nextId = 0;
+
 //----------------------------------------------------------------------
 // Thread::Thread
 // 	Initialize a thread control block, so that we can then call
@@ -41,6 +43,7 @@ Thread::Thread(char* threadName)
 }
 
 Thread::Thread(char* threadName, int priority) {
+	id = Thread::nextId++;
     name = threadName;
     stackTop = NULL;
     stack = NULL;
@@ -343,5 +346,8 @@ int Thread::getPriority() {
 void Thread::setPriority(int priority) {
 	threadPriority = priority;
 }
-#endif
 
+int Thread::GetId() {
+	return id;
+}
+#endif

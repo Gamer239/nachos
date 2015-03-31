@@ -36,3 +36,7 @@ std::map<int, Process*>* Process::GetProcMap() {
 	}
 	return procmap;
 }
+
+Thread * Process::GetThread() {
+	return thread;
+}
