@@ -127,6 +127,13 @@ void ExceptionHandler(ExceptionType which) {
 				printf("Call to Syscall Exit (SC_Exit).\n");
 				// I don't think we need to care about the value passed to use
 				// by the user program's Exit call.
+				
+				Process * currentProcess;
+				if (Process::GetProcMap()->find(currentThread->GetId()) != 
+						Process::GetProcMap()->end()) {
+					currentProcess = Process::GetProcMap()->at(currentThread->GetId())
+				}
+
 				delete currentThread->space;
 				currentThread->space = NULL;
 				printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
