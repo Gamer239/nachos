@@ -1,1 +1,1 @@
-start.s
+/* Star
