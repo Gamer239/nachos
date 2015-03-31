@@ -110,23 +110,39 @@ AddrSpace::AddrSpace(OpenFile *executable)
     
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+	bzero(machine->mainMemory, size);
 
-// then, copy in the code and data segments into memory
-    if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
-			noffH.code.virtualAddr, noffH.code.size);
-        
-		// executable->ReadAt(&(machine->mainMemory[pageTable]
-		executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
-    }
-    if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
-			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
-    }
+	// then, copy in the code and data segments into memory
+	if (noffH.code.size > 0) {
+		DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
+				noffH.code.virtualAddr, noffH.code.size);
+
+		for (int i = 0; i < noffH.code.size; i++) {	
+			int pageNum = (noffH.code.virtualAddr + i) / PageSize;
+			int offset = (noffH.code.virtualAddr + i) - (pageNum * PageSize);
+			DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
+					pageNum, offset);
+			executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, noffH.code.inFileAddr + i);
+			// executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
+			//	noffH.code.size, noffH.code.inFileAddr);
+
+		}
+	}
+	if (noffH.initData.size > 0) {
+		DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
+				noffH.initData.virtualAddr, noffH.initData.size);
+		
+		for (int i = 0; i < noffH.initData.size; i++) {
+			int pageNum = (noffH.initData.virtualAddr + i) / PageSize;
+			int offset = (noffH.initData.virtualAddr + i) - (pageNum * PageSize);
+			DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
+					pageNum, offset);
+			executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, noffH.initData.inFileAddr + i);
+
+		}
+		// executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
+		//		noffH.initData.size, noffH.initData.inFileAddr);
+	}
 }
 
 //----------------------------------------------------------------------
