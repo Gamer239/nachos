@@ -102,7 +102,6 @@ SpaceId exec(char *filename) {
 	// put the thread on the ready queue?
 
 	thread->Fork(startProcess, 0);
-	currentThread->Yield();
 
 	return child->GetThread()->GetId();
 
@@ -154,13 +153,14 @@ void ExceptionHandler(ExceptionType which) {
 
 					printf("Call to Syscall Exec (SC_Exec).\n");
 					int ret = exec(buf);
-
+					printf("ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
+					currentThread->Yield();
 					break;
 				}
 
 			case SC_Join: {
-							  printf("Call to Syscall Join (SC_Join).\n");
+							  printf("Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
 							  printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 							  break;
 						  }
@@ -312,7 +312,7 @@ void ExceptionHandler(ExceptionType which) {
 									//TODO: we never write anything because the file isnt open, handle this?
 									printf( "Error writing file %d\n", mapped_id );
 								}
-								printf("\nWrote %d bytes\n", wrote);
+								// printf("\nWrote %d bytes\n", wrote);
 								/*
 							   while (wrote < size && buf != EOF) {
 								   read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);

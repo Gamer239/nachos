@@ -17,6 +17,13 @@ main()
 {
 	char * testString = "testing hello\n";
 	Write(testString, 14, ConsoleOutput);
+	int i = 0;
+	while (i < 150000) {
+		if (i % 1000 == 0) {
+			// Write("working\n", 8, ConsoleOutput);
+		}
+		i++;
+	}
     Exit(0);
     /* not reached */
 }

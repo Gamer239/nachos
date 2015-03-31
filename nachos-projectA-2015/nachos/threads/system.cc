@@ -65,6 +65,16 @@ TimerInterruptHandler(int dummy)
 	interrupt->YieldOnReturn();
 }
 
+static int quant = 0;
+
+static void TimeSlicingHandler(int dummy) {
+
+	if (++quant % 20 == 0) {
+		quant = 0;
+		interrupt->YieldOnReturn();
+	}
+
+}
 //----------------------------------------------------------------------
 // Initialize
 // 	Initialize Nachos global data structures.  Interpret command
@@ -134,8 +144,12 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
-	timer = new Timer(TimerInterruptHandler, 0, randomYield);
+    
+	if (randomYield) {				// start the timer (if needed)
+		timer = new Timer(TimerInterruptHandler, 0, randomYield);
+	} else {
+		timer = new Timer(TimeSlicingHandler, 0, false);
+	}
 
     threadToBeDestroyed = NULL;
 

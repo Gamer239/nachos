@@ -27,7 +27,7 @@ main()
 		Write(bytesbuf, 2, output);
 		if(i > 0) {
 			newProc = Exec(buffer, argv);
-			Write("Got AID: ", 9, output);
+			Write("Got PID: ", 9, output);
 		    Write((char) newProc + '0', 1, output);
 			Write("\n", 1, output);	
 			Join(newProc);
