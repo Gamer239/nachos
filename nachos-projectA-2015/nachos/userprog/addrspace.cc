@@ -23,6 +23,8 @@
 #include <strings.h>
 #endif
 
+int AddrSpace::nextId = 0;
+
 //----------------------------------------------------------------------
 // SwapHeader
 // 	Do little endian to big endian conversion on the bytes in the 
@@ -108,6 +110,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
 										// pages to be read-only
     }
     
+	id = GetNextId();
+
+	printf("assigning it addrId of %d\n", GetId());	
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
     bzero(machine->mainMemory, size);
@@ -125,7 +130,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
         executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
-
 }
 
 //----------------------------------------------------------------------
@@ -203,4 +207,12 @@ void AddrSpace::RestoreState()
 
 bool AddrSpace::GetFull() {
 	return memFull;
+}
+
+int AddrSpace::GetId() {
+	return id;
+}
+
+int AddrSpace::GetNextId() {
+	return nextId++;
 }

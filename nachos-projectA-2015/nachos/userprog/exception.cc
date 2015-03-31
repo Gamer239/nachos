@@ -48,6 +48,15 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+void startProcess(int n) {
+	currentThread->space->RestoreState();
+	currentThread->space->InitRegisters();
+	// currentThread->space->LoadArguments();
+
+	machine->Run();
+	ASSERT(false);
+}
+
 void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
 
@@ -66,6 +75,9 @@ void ExceptionHandler(ExceptionType which) {
 				printf("Call to Syscall Exit (SC_Exit).\n");
 				// I don't think we need to care about the value passed to use
 				// by the user program's Exit call.
+				delete currentThread->space;
+				currentThread->space = NULL;
+				// printf("currentThread is: %s\n", currentThread->getName());
 				currentThread->Finish();
 				machine->WriteRegister(2, 0); 
 				break;
@@ -89,24 +101,30 @@ void ExceptionHandler(ExceptionType which) {
 								  break;
 							  }
 
-							  Thread *thread = new Thread(buf);
+							  Thread *thread = new Thread(buf, 0);
 							  space = new AddrSpace(executable);
 
 							  delete executable;
 
+							  // check if the returned address space failed to allocate
+							  // the number of pages we needed
 							  if (space->GetFull()) {
 								  printf("Error: Exec: Insufficient memory to start process\n");
 								  delete space;
 								  break;
 							  }
 
-							  space->InitRegisters();
-							  space->RestoreState();
+							  thread->space = space;
+							  // assign the new space to the thread
+							  // put the thread on the ready queue?
+							  // IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
-							  printf("running %s\n", buf);
 
-							  machine->Run();
-							  ASSERT(FALSE);
+
+							  // currentThread->Yield();
+							  thread->Fork(startProcess, 0);
+							  machine->WriteRegister(2, space->GetId());
+
 							  break;
 						  }
 

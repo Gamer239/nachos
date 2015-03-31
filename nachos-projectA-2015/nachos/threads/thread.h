@@ -106,7 +106,7 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
-    void Print() { printf("%s, ", name); }
+    void Print() { printf("Thread: %s, ", name); }
 #ifdef CHANGED
 	int getPriority();
 	void setPriority(int priority);

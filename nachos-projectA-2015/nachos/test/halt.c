@@ -15,6 +15,8 @@
 int
 main()
 {
-    Halt();
+	char * testString = "testing hello\n";
+	Write(testString, 14, ConsoleOutput);
+    Exit(0);
     /* not reached */
 }

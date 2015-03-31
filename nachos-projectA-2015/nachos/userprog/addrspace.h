@@ -32,6 +32,7 @@ class AddrSpace {
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch 
 	bool GetFull();			// so we can check if space creation failed
+	int GetId();
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
@@ -40,6 +41,9 @@ class AddrSpace {
 					// address space
 	PageMap* pageMap;
 	bool memFull;
+	int id;
+	static int nextId;
+	static int GetNextId();
 };
 
 #endif // ADDRSPACE_H
