@@ -25,6 +25,8 @@
 #include "system.h"
 #include "syscall.h"
 #include "process.h"
+#include "thread.h"
+
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -67,6 +69,7 @@ SpaceId exec(char *filename) {
 		return -1;
 	}
 
+	(void) interrupt->SetLevel(IntOff);
 	Thread *thread = new Thread(filename, 0);
 	space = new AddrSpace(executable);
 	int parentId = currentThread->GetId();
@@ -105,7 +108,6 @@ SpaceId exec(char *filename) {
 
 	return child->GetThread()->GetId();
 
-
 }
 
 #define BUFFER_SIZE 256
@@ -125,23 +127,44 @@ void ExceptionHandler(ExceptionType which) {
 				break;
 
 			case SC_Exit:
-				printf("Call to Syscall Exit (SC_Exit).\n");
-				// I don't think we need to care about the value passed to use
-				// by the user program's Exit call.
-				
-				Process * currentProcess;
-				if (Process::GetProcMap()->find(currentThread->GetId()) != 
-						Process::GetProcMap()->end()) {
-					currentProcess = Process::GetProcMap()->at(currentThread->GetId());
+				{
+					printf("Call to Syscall Exit (SC_Exit).\n");
+					// I don't think we need to care about the value passed to use
+					// by the user program's Exit call.
+
+					Process * currentProcess;
+					if (Process::GetProcMap()->find(currentThread->GetId()) != 
+							Process::GetProcMap()->end()) {
+						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
+					} else {
+						ASSERT(false); // should never happen
+					}
+
+					Process * parent = currentProcess->GetParent();
+					Thread * parentThread = parent->GetThread();
+					if (parent != NULL && currentThread->GetStatus() != ZOMBIE) { // I have parent
+						currentProcess->SetReturnValue(machine->ReadRegister(4));
+						if (parentThread->GetStatus() == BLOCKED) {
+							parentThread->Signal();
+						}
+					}
+
+					if (!currentProcess->GetChildren()->IsEmpty()) {
+						currentProcess->GetChildren()->Mapcar(Process::SetZombie);	
+					}
+
+
+
+					Process::GetProcMap()->erase(currentThread->GetId());
+
+					delete currentProcess;
+					delete currentThread->space;
+					currentThread->space = NULL;
+					printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
+					currentThread->Finish();
+					machine->WriteRegister(2, 0);
+					break;
 				}
-
-				delete currentThread->space;
-				currentThread->space = NULL;
-				printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
-				currentThread->Finish();
-				machine->WriteRegister(2, 0);
-				break;
-
 			case SC_Exec: 
 				{
 					addr = machine->ReadRegister(4);
@@ -155,13 +178,14 @@ void ExceptionHandler(ExceptionType which) {
 					int ret = exec(buf);
 					printf("ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
-					currentThread->Yield();
 					break;
 				}
 
 			case SC_Join: {
 							  printf("Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
 							  printf("join(spaceid = %d)\n", machine->ReadRegister(4));
+
+							  
 							  break;
 						  }
 
@@ -312,7 +336,7 @@ void ExceptionHandler(ExceptionType which) {
 									//TODO: we never write anything because the file isnt open, handle this?
 									printf( "Error writing file %d\n", mapped_id );
 								}
-								// printf("\nWrote %d bytes\n", wrote);
+								printf("\nWrote %d bytes\n", wrote);
 								/*
 							   while (wrote < size && buf != EOF) {
 								   read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);

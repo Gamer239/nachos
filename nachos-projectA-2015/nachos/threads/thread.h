@@ -45,6 +45,7 @@
 #include "addrspace.h"
 #include <map>
 #include "syscall.h"
+#include "synch.h"
 #endif
 
 // CPU register state to be saved on context switch.
@@ -59,7 +60,7 @@
 
 
 // Thread state
-enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
+enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED, ZOMBIE };
 
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);
@@ -115,11 +116,12 @@ class Thread {
 	int getPriority();
 	void setPriority(int priority);
 	int GetId();
+	void Signal();
 #endif
 
   private:
     // some of the private data for this class is listed above
-
+	Semaphore* joinSem;
     int* stack; 	 		// Bottom of the stack
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
@@ -140,6 +142,7 @@ class Thread {
   public:
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
+	ThreadStatus GetStatus();
 
     AddrSpace *space;			// User code this thread is running.
     #ifdef CHANGED

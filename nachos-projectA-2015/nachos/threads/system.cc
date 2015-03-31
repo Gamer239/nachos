@@ -71,6 +71,7 @@ static void TimeSlicingHandler(int dummy) {
 
 	if (++quant % 20 == 0) {
 		quant = 0;
+		printf("Going to Yield %s\n", currentThread->getName());
 		interrupt->YieldOnReturn();
 	}
 

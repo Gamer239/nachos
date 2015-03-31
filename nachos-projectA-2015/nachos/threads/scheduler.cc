@@ -58,6 +58,7 @@ Scheduler::ReadyToRun (Thread *thread)
     thread->setStatus(READY);
 #ifdef CHANGED
 	readyList->SortedInsert((void *)thread, thread->getPriority());
+	scheduler->Print();
 #endif
 }
 
@@ -117,8 +118,10 @@ Scheduler::Run (Thread *nextThread)
 
     SWITCH(oldThread, nextThread);
     
-    DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
+    DEBUG('t', "\n\nNow in thread \"%s\"(%d)\n\n", currentThread->getName(),
+			currentThread->GetId());
 
+	printf("size of readyList: %d\n", readyList->Size());
     // If the old thread gave up the processor because it was finishing,
     // we need to delete its carcass.  Note we cannot delete the thread
     // before now (for example, in Thread::Finish()), because up to this
@@ -144,6 +147,7 @@ Scheduler::Run (Thread *nextThread)
 void
 Scheduler::Print()
 {
-	printf("Ready list contents:\n");
+	printf("Ready list contents: ");
     readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
+	printf("\n");
 }

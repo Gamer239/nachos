@@ -17,7 +17,6 @@
 #include "copyright.h"
 #include "thread.h"
 #include "switch.h"
-#include "synch.h"
 #include "system.h"
 
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
@@ -49,6 +48,9 @@ Thread::Thread(char* threadName, int priority) {
     stack = NULL;
     status = JUST_CREATED;
 #ifdef USER_PROGRAM
+	char sem_name[128];
+	snprintf(sem_name, 128, "JoinSem for Thread[%s]", name);
+	// joinSem = new Semaphore(sem_name, 1);
     space = NULL;
 		#ifdef CHANGED
 			fileHandlers = new std::map<int, OpenFile*>();
@@ -84,6 +86,7 @@ Thread::~Thread()
 			delete fileHandlers;
 		#endif
 	#endif
+	// delete joinSem;
 }
 
 //----------------------------------------------------------------------
@@ -359,5 +362,13 @@ void Thread::setPriority(int priority) {
 
 int Thread::GetId() {
 	return id;
+}
+
+ThreadStatus Thread::GetStatus() {
+	return status;
+}
+
+void Thread::Signal() {
+	// joinSem->V();
 }
 #endif

@@ -43,7 +43,8 @@ ListElement::ListElement(void *itemPtr, long long unsigned sortKey)
 
 List::List()
 { 
-    first = last = NULL; 
+    first = last = NULL;
+   size = 0;	
 }
 
 //----------------------------------------------------------------------
@@ -86,6 +87,7 @@ List::Append(void *item)
 	last->next = element;
 	last = element;
     }
+	size++;
 }
 
 //----------------------------------------------------------------------
@@ -112,6 +114,7 @@ List::Prepend(void *item)
 	element->next = first;
 	first = element;
     }
+	size++;
 }
 
 //----------------------------------------------------------------------
@@ -200,6 +203,7 @@ List::SortedInsert(void *item, long long unsigned sortKey)
         last->next = element;           // item goes at end of list
         last = element;
     }
+	size++;
 }
 
 
@@ -235,6 +239,10 @@ List::SortedRemove(long long unsigned *keyPtr)
     if (keyPtr != NULL)
         *keyPtr = element->key;
     delete element;
+	size--;
     return thing;
 }
 
+int List::Size() {
+	return size;
+}

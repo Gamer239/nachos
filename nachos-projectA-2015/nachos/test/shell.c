@@ -28,7 +28,7 @@ main()
 		if(i > 0) {
 			newProc = Exec(buffer, argv);
 			Write("Got PID: ", 9, output);
-		    Write((char) newProc + '0', 1, output);
+		    Write((char)(((int) '0') + newProc), 1, output);
 			Write("\n", 1, output);	
 			Join(newProc);
 		}

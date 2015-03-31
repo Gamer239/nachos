@@ -40,3 +40,11 @@ std::map<int, Process*>* Process::GetProcMap() {
 Thread * Process::GetThread() {
 	return thread;
 }
+
+void Process::SetZombie(int arg) {
+	((Thread *) arg)->setStatus(ZOMBIE);
+}
+
+void Process::SetReturnValue(int val) {
+	returnVal = val;
+}

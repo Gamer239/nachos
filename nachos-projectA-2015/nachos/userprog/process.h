@@ -21,12 +21,17 @@ class Process {
 
 		Thread * GetThread();
 
+		static void SetZombie(int arg);
+		void SetReturnValue(int val);
+
+
 	private: 
 		int id;
 		Process * parent;
 		List * children;
 		Thread * thread;
 		static std::map<int, Process*>* procmap;
+		int returnVal;
 
 };
 
