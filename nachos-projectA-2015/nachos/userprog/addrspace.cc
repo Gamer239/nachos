@@ -116,7 +116,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
+        
+		// executable->ReadAt(&(machine->mainMemory[pageTable]
+		executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
 			noffH.code.size, noffH.code.inFileAddr);
     }
     if (noffH.initData.size > 0) {

@@ -133,7 +133,7 @@ void ExceptionHandler(ExceptionType which) {
 				Process * currentProcess;
 				if (Process::GetProcMap()->find(currentThread->GetId()) != 
 						Process::GetProcMap()->end()) {
-					currentProcess = Process::GetProcMap()->at(currentThread->GetId())
+					currentProcess = Process::GetProcMap()->at(currentThread->GetId());
 				}
 
 				delete currentThread->space;
