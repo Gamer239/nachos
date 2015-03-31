@@ -24,6 +24,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+#include "process.h"
 
 //----------------------------------------------------------------------
 // ExceptionHandler
@@ -49,12 +50,47 @@
 //----------------------------------------------------------------------
 
 void startProcess(int n) {
-	currentThread->space->RestoreState();
 	currentThread->space->InitRegisters();
+	currentThread->space->RestoreState();
 	// currentThread->space->LoadArguments();
-
+	printf("[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
-	ASSERT(false);
+	// ASSERT(false);
+}
+
+SpaceId exec(char *filename) {
+	OpenFile *executable = fileSystem->Open(filename);
+	AddrSpace *space;
+
+	if (executable == NULL) {
+		printf("SC_Exec Error: Unable to open file %s\n", filename);
+		return -1;
+	}
+
+	Thread *thread = new Thread(filename, 0);
+	space = new AddrSpace(executable);
+	Process *process = new Process(thread, space->GetId());
+
+	delete executable;
+
+	// check if the returned address space failed to allocate
+	// the number of pages we needed
+	if (space->GetFull()) {
+		printf("Error: Exec: Insufficient memory to start process\n");
+		delete space;
+		return -1;
+	}
+
+	thread->space = space;
+	// assign the new space to the thread
+	// put the thread on the ready queue?
+
+	thread->Fork(startProcess, 0);
+	currentThread->Yield();
+
+	return space->GetId();
+
+
 }
 
 void ExceptionHandler(ExceptionType which) {
@@ -77,56 +113,27 @@ void ExceptionHandler(ExceptionType which) {
 				// by the user program's Exit call.
 				delete currentThread->space;
 				currentThread->space = NULL;
-				// printf("currentThread is: %s\n", currentThread->getName());
+				printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
 				currentThread->Finish();
 				machine->WriteRegister(2, 0); 
 				break;
 
-			case SC_Exec: {
-							  addr = machine->ReadRegister(4);
-							  do {
-								  machine->ReadMem(addr + i, 1, (int *) &c);
-								  sprintf(buf + strlen(buf), "%c", c);
-								  i++;
-							  } while (c != '\0');
+			case SC_Exec: 
+				{
+					addr = machine->ReadRegister(4);
+					do {
+						machine->ReadMem(addr + i, 1, (int *) &c);
+						sprintf(buf + strlen(buf), "%c", c);
+						i++;
+					} while (c != '\0');
 
-							  printf("Call to Syscall Exec (SC_Exec).\n");
-							  printf("Execing: %s\n", buf); 
+					printf("Call to Syscall Exec (SC_Exec).\n");
+					printf("Execing: %s\n", buf); 
+					int ret = exec(buf);
 
-							  OpenFile *executable = fileSystem->Open(buf);
-							  AddrSpace *space;
-
-							  if (executable == NULL) {
-								  printf("SC_Exec Error: Unable to open file %s\n", buf);
-								  break;
-							  }
-
-							  Thread *thread = new Thread(buf, 0);
-							  space = new AddrSpace(executable);
-
-							  delete executable;
-
-							  // check if the returned address space failed to allocate
-							  // the number of pages we needed
-							  if (space->GetFull()) {
-								  printf("Error: Exec: Insufficient memory to start process\n");
-								  delete space;
-								  break;
-							  }
-
-							  thread->space = space;
-							  // assign the new space to the thread
-							  // put the thread on the ready queue?
-							  // IntStatus oldLevel = interrupt->SetLevel(IntOff);
-
-
-
-							  // currentThread->Yield();
-							  thread->Fork(startProcess, 0);
-							  machine->WriteRegister(2, space->GetId());
-
-							  break;
-						  }
+					machine->WriteRegister(2, ret);
+					break;
+				}
 
 			case SC_Join: {
 							  printf("Call to Syscall Join (SC_Join).\n");

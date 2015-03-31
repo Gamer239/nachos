@@ -109,7 +109,6 @@ Scheduler::Run (Thread *nextThread)
     
     DEBUG('t', "Switching from thread \"%s\" to thread \"%s\"\n",
 	  oldThread->getName(), nextThread->getName());
-	Print();
 
     // This is a machine-dependent assembly language routine defined 
     // in switch.s.  You may have to think
@@ -145,6 +144,6 @@ Scheduler::Run (Thread *nextThread)
 void
 Scheduler::Print()
 {
-    printf("Ready list contents:\n");
+	// printf("Ready list contents:\n");
     readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
 }

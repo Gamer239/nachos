@@ -13,19 +13,19 @@
 #include "synchconsole.h"
 #include "addrspace.h"
 #include "synch.h"
+#include "syscall.h"
 
 //----------------------------------------------------------------------
 // StartProcess
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
-void startProcess(int n);
+SpaceId exec(char* filename);
 
 void
 StartProcess(char *filename)
 {
-
-	/*
+/*
 	OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
@@ -47,36 +47,8 @@ StartProcess(char *filename)
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits
 					// by doing the syscall "exit"
-	*/
-	OpenFile *executable = fileSystem->Open(filename);
-    AddrSpace *space;
-
-	printf("StartProcess(%s)\n", filename);
-
-	if (executable == NULL) {
-		printf("Unable to open file %s\n", filename);
-		return;
-	}
-    
-	Thread *thread = new Thread(filename, 0);
-	space = new AddrSpace(executable);    
-
-    delete executable;			// close file
-
-	if (space->GetFull()) {
-		printf("not enough memory\n");
-		return;
-	}
-
-	thread->space = space;
-
-	printf("same thing\n");
-	thread->Fork(startProcess, 0);
-
-	return;			// machine->Run never returns;
-					// the address space exits
-					// by doing the syscall "exit"
-
+*/
+	exec(filename);
 }
 
 // Data structures needed for the console test.  Threads making
