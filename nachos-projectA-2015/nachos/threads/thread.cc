@@ -50,7 +50,7 @@ Thread::Thread(char* threadName, int priority) {
 #ifdef USER_PROGRAM
 	char sem_name[128];
 	snprintf(sem_name, 128, "JoinSem for Thread[%s]", name);
-	// joinSem = new Semaphore(sem_name, 1);
+	joinSem = new Semaphore(sem_name, 1);
     space = NULL;
 		#ifdef CHANGED
 			fileHandlers = new std::map<int, OpenFile*>();
@@ -86,7 +86,7 @@ Thread::~Thread()
 			delete fileHandlers;
 		#endif
 	#endif
-	// delete joinSem;
+	delete joinSem;
 }
 
 //----------------------------------------------------------------------
@@ -369,6 +369,6 @@ ThreadStatus Thread::GetStatus() {
 }
 
 void Thread::Signal() {
-	// joinSem->V();
+	joinSem->V();
 }
 #endif

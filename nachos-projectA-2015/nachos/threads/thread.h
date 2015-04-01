@@ -39,13 +39,13 @@
 
 #include "copyright.h"
 #include "utility.h"
+#include "synch.h"
 
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
 #include <map>
 #include "syscall.h"
-#include "synch.h"
 #endif
 
 // CPU register state to be saved on context switch.
@@ -75,6 +75,7 @@ extern void ThreadPrint(int arg);
 //
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
+class Semaphore;
 
 class Thread {
   private:
@@ -86,6 +87,7 @@ class Thread {
 	int threadPriority;
 	int id;
 	static int nextId;
+	Semaphore* joinSem;
 #endif
 
   public:
@@ -121,7 +123,6 @@ class Thread {
 
   private:
     // some of the private data for this class is listed above
-	Semaphore* joinSem;
     int* stack; 	 		// Bottom of the stack
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
