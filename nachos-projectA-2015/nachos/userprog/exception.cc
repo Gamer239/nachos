@@ -192,7 +192,7 @@ void ExceptionHandler(ExceptionType which) {
 			case SC_Join:
 				{
 					DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
-					scheduler->Print();
+					// scheduler->Print();
 					// printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
 					int retVal;
