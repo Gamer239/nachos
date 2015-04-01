@@ -52,16 +52,15 @@
 //----------------------------------------------------------------------
 
 void startProcess(int n) {
-	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
+	currentThread->space->InitRegisters();
 	// currentThread->space->LoadArguments();
 	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
-	// ASSERT(false);
+	ASSERT(false);
 }
 
-SpaceId exec(char *filename) {
-	interrupt->SetLevel(IntOff);
+SpaceId exec(char *filename, int argc, int argv) {
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
 
@@ -93,13 +92,6 @@ SpaceId exec(char *filename) {
 	Process::GetProcMap()->insert(std::pair<int, Process*>(parentId, parent));
 	Process::GetProcMap()->insert(std::pair<int, Process*>(thread->GetId(), child));
 	// printf("inserted pid %d into procmap\n", thread->GetId());
-	
-	for(std::map<int, Process*>::const_iterator it = Process::GetProcMap()->begin();
-			it !=Process::GetProcMap()->end(); ++it)
-	{
-		printf("key: %d process-thread-name:%s\n", it->first, it->second->GetThread()->getName());
-	}
-
 	delete executable;
 
 	// check if the returned address space failed to allocate
@@ -109,6 +101,8 @@ SpaceId exec(char *filename) {
 		delete space;
 		return -1;
 	}
+	
+	// space->SetArguments(argc, (char**) argv, filename);
 
 	thread->space = space;
 	// assign the new space to the thread
@@ -116,7 +110,6 @@ SpaceId exec(char *filename) {
 
 	thread->Fork(startProcess, 0);
 
-	interrupt->Enable();
 	return child->GetThread()->GetId();
 
 }
@@ -143,6 +136,7 @@ void ExceptionHandler(ExceptionType which) {
 					// I don't think we need to care about the value passed to use
 					// by the user program's Exit call.
 
+					IntStatus oldLevel = interrupt->SetLevel(IntOff);
 					Process * currentProcess;
 					if (Process::GetProcMap()->find(currentThread->GetId()) !=
 							Process::GetProcMap()->end()) {
@@ -164,6 +158,8 @@ void ExceptionHandler(ExceptionType which) {
 							// printf("my(%d) parent(%d) is not blocked(%d)\n", currentThread->GetId(), parentThread->GetId(), parentThread->GetStatus());
 						 }
 
+					} else {
+						Process::GetProcMap()->erase(currentThread->GetId());
 					}
 
 					// printf("gonna check for children\n");
@@ -180,6 +176,7 @@ void ExceptionHandler(ExceptionType which) {
 					delete currentThread->space;
 					currentThread->space = NULL;
 					DEBUG('s', "SC_EXIT: currentThread is: %s\n", currentThread->getName());
+					interrupt->SetLevel(oldLevel);
 					currentThread->Finish();
 					machine->WriteRegister(2, 0);
 					break;
@@ -194,9 +191,12 @@ void ExceptionHandler(ExceptionType which) {
 					} while (c != '\0');
 
 					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
-					int ret = exec(buf);
+
+					interrupt->SetLevel(IntOff);
+					int ret = exec(buf, machine->ReadRegister(5), machine->ReadRegister(6));
 					printf("EXEC ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
+					interrupt->Enable();
 					break;
 				}
 
@@ -213,41 +213,42 @@ void ExceptionHandler(ExceptionType which) {
 					Thread* targetParent;
 					// target process is in procmap
 
-/*
+					/*
 					for(std::map<int, Process*>::const_iterator it = Process::GetProcMap()->begin();
 							it !=Process::GetProcMap()->end(); ++it)
 					{
-						printf("key: %d\n", it->first);
+						printf("key: %d, thread: %s\n", it->first, it->second->GetThread()->getName());
 					}
 
 					*/
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
-						printf("JOIN - found pid(%d) in procmap!\n", pid);
+						//printf("JOIN - found pid(%d) in procmap!\n", pid);
 						target = Process::GetProcMap()->at(pid);
 						targetParent = target->GetParent()->GetThread();
 						// targets parent is us
 						if (targetParent->GetId() == currentThread->GetId()) {
-							printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
-								targetParent->GetId(), currentThread->GetId());
+							// printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
+								// targetParent->GetId(), currentThread->GetId());
 							if (!target->GetFinished()) {
-								printf("JOIN - target is not finished, waiting\n");
+								//printf("JOIN - target is not finished, waiting\n");
 								currentThread->setStatus(JOINING);
 								currentThread->WaitOnReturn();
 							}
-							printf("JOIN - target is done, getting return value\n");
+							//printf("JOIN - target is done, getting return value\n");
 							retVal = target->GetReturnValue();
+							Process::GetProcMap()->erase(pid);
 						} else {
-							printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
-								targetParent->GetId(), currentThread->GetId());
+							//printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
+								// targetParent->GetId(), currentThread->GetId());
 							retVal = -1;
 						}
 					} else {
-						printf("JOIN - did not find pid %d in procmap\n", pid);
+						//printf("JOIN - did not find pid %d in procmap\n", pid);
 						retVal = -1;
 					}
-					interrupt->SetLevel(oldLevel);
 					printf("JOIN - retVal: %d\n", retVal);
 					machine->WriteRegister(2, retVal);
+					interrupt->SetLevel(oldLevel);
 					break;
 				}
 

@@ -41,13 +41,13 @@
 class UserTranslate {
   public:
 
-    bool ReadMem(int addr, int size, int* value);
-    bool WriteMem(int addr, int size, int value);
+    static bool ReadMem(int addr, int size, int* value);
+    static bool WriteMem(int addr, int size, int value);
     				// Read or write 1, 2, or 4 bytes of virtual
 				// memory (at addr).  Return FALSE if a
 				// correct translation couldn't be found.
 
-    ExceptionType Translate(int virtAddr, int* physAddr, int size,bool writing);
+    static ExceptionType Translate(int virtAddr, int* physAddr, int size,bool writing);
     				// Translate an address, and check for
 				// alignment.  Set the use and dirty bits in
 				// the translation entry appropriately,

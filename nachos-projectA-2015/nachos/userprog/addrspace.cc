@@ -19,6 +19,7 @@
 #include "system.h"
 #include "addrspace.h"
 #include "noff.h"
+#include "exception_utils.h"
 #ifdef HOST_SPARC
 #include <strings.h>
 #endif
@@ -30,7 +31,7 @@
 //	endian machine, and we're now running on a big endian machine.
 //----------------------------------------------------------------------
 
-static void 
+	static void 
 SwapHeader (NoffHeader *noffH)
 {
 	noffH->noffMagic = WordToHost(noffH->noffMagic);
@@ -62,43 +63,44 @@ SwapHeader (NoffHeader *noffH)
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
-    NoffHeader noffH;
-    unsigned int i, size;
+	NoffHeader noffH;
+	unsigned int i, size;
+	executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+	if ((noffH.noffMagic != NOFFMAGIC) && 
+			(WordToHost(noffH.noffMagic) == NOFFMAGIC))
+		SwapHeader(&noffH);
+	ASSERT(noffH.noffMagic == NOFFMAGIC);
 
-    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    if ((noffH.noffMagic != NOFFMAGIC) && 
-		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
-    	SwapHeader(&noffH);
-    ASSERT(noffH.noffMagic == NOFFMAGIC);
-
-// how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
-			+ UserStackSize;	// we need to increase the size
-						// to leave room for the stack
-    numPages = divRoundUp(size, PageSize);
-    size = numPages * PageSize;
+	// how big is address space?
+	size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
+		+ UserStackSize;	// we need to increase the size
+	// to leave room for the stack
+	numPages = divRoundUp(size, PageSize);
+	size = numPages * PageSize;
 
 	memFull = false; 
 	pageMap = PageMap::GetInstance();
-    if (numPages > (unsigned int) pageMap->NumClear()) {
+	if (numPages > (unsigned int) pageMap->NumClear()) {
+		printf("numPages(%d) > pageMap-NumClear()(%d)", numPages, pageMap->NumClear());
 		memFull = true; 
 	}		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
-						
-
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
-					numPages, size);
+	// to run anything too big --
+	// at least until we have
+	// virtual memory
 
 
+	DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
+			numPages, size);
+
+	/*
 	printf("Current status of pageMap before allocate:\n");
-	for (int i = 0; i < NumPhysPages; i++) {
-		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', i != 0 && i % 10 == 0 ? '\n' : ' ');	
+	for (i = 0; i < NumPhysPages; i++) {
+		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', (i != 0 && i % 10 == 0) ? '\n' : ' ');	
 	}
 	printf("\n");
-// first, set up the translation
-    pageTable = new TranslationEntry[numPages];
+	*/
+	// first, set up the translation
+	pageTable = new TranslationEntry[numPages];
 	if (!memFull) {
 		for (i = 0; i < numPages; i++) {
 			pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
@@ -114,48 +116,41 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			pageTable[i].use = FALSE;
 			pageTable[i].dirty = FALSE;
 			pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-											// a separate page, we could set its 
-											// pages to be read-only
+			// a separate page, we could set its 
+			// pages to be read-only
 		}
 	} 
-// zero out the entire address space, to zero the unitialized data segment 
-// and the stack segment
+
+	/*
+	printf("Current status of pageMap after allocate:\n");
+	for (i = 0; i < NumPhysPages; i++) {
+		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', (i != 0 && i % 10 == 0) ? '\n' : ' ');	
+	}
+	*/
+	// zero out the entire address space, to zero the unitialized data segment 
+	// and the stack segment
 	// bzero(machine->mainMemory, size);
 
 	// then, copy in the code and data segments into memory
 	if (!memFull) {
-		if (noffH.code.size > 0) {
-			DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
-					noffH.code.virtualAddr, noffH.code.size);
-
-			for (i = 0; i < noffH.code.size; i++) {	
-				int pageNum = (noffH.code.virtualAddr + i) / PageSize;
-				int offset = (noffH.code.virtualAddr + i) - (pageNum * PageSize);
-				DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
-						pageNum, offset);
-				executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, noffH.code.inFileAddr + i);
-				// executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-				//	noffH.code.size, noffH.code.inFileAddr);
-
-			}
-		}
-		if (noffH.initData.size > 0) {
-			DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
-					noffH.initData.virtualAddr, noffH.initData.size);
-
-			for (i = 0; i < noffH.initData.size; i++) {
-				int pageNum = (noffH.initData.virtualAddr + i) / PageSize;
-				int offset = (noffH.initData.virtualAddr + i) - (pageNum * PageSize);
-				DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
-						pageNum, offset);
-				executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, noffH.initData.inFileAddr + i);
-
-			}
-		}
-		// executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-		//		noffH.initData.size, noffH.initData.inFileAddr);
+		LoadMem(noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, executable);
+		LoadMem(noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr,
+				executable);
 	}
 }
+
+void AddrSpace::LoadMem(int virtualAddr, int size, int inFileAddr, OpenFile* executable) {
+	if (size > 0) {
+		DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", virtualAddr, size);
+
+		for (int i = 0; i < size; i++) {	
+			int pageNum = (virtualAddr + i) / PageSize;
+			int offset = (virtualAddr + i) - (pageNum * PageSize);
+			DEBUG('a', "Initializing code ent, at page %d, offset %d\n", pageNum, offset);
+			executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, inFileAddr + i);
+		}
+	}
+}	
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
@@ -166,7 +161,9 @@ AddrSpace::~AddrSpace()
 {
 	// return the pages we were using
 	for (unsigned int i = 0; i < numPages; i++) {
-		pageMap->Clear(pageTable[i].physicalPage);
+		if (pageTable[i].physicalPage < NumPhysPages) {
+			pageMap->Clear(pageTable[i].physicalPage);
+		}
 	}
 	delete pageTable;
 }
@@ -181,26 +178,26 @@ AddrSpace::~AddrSpace()
 //	when this thread is context switched out.
 //----------------------------------------------------------------------
 
-void
+	void
 AddrSpace::InitRegisters()
 {
-    int i;
+	int i;
 
-    for (i = 0; i < NumTotalRegs; i++)
-	machine->WriteRegister(i, 0);
+	for (i = 0; i < NumTotalRegs; i++)
+		machine->WriteRegister(i, 0);
 
-    // Initial program counter -- must be location of "Start"
-    machine->WriteRegister(PCReg, 0);	
+	// Initial program counter -- must be location of "Start"
+	machine->WriteRegister(PCReg, 0);	
 
-    // Need to also tell MIPS where next instruction is, because
-    // of branch delay possibility
-    machine->WriteRegister(NextPCReg, 4);
+	// Need to also tell MIPS where next instruction is, because
+	// of branch delay possibility
+	machine->WriteRegister(NextPCReg, 4);
 
-   // Set the stack register to the end of the address space, where we
-   // allocated the stack; but subtract off a bit, to make sure we don't
-   // accidentally reference off the end!
-    machine->WriteRegister(StackReg, numPages * PageSize - 16);
-    DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
+	// Set the stack register to the end of the address space, where we
+	// allocated the stack; but subtract off a bit, to make sure we don't
+	// accidentally reference off the end!
+	machine->WriteRegister(StackReg, numPages * PageSize - 16);
+	DEBUG('a', "Initializing stack register to %d\n", numPages * PageSize - 16);
 }
 
 //----------------------------------------------------------------------
@@ -213,8 +210,8 @@ AddrSpace::InitRegisters()
 
 void AddrSpace::SaveState() 
 {
-	pageTable = machine->pageTable;
-	numPages = machine->pageTableSize;
+// 	pageTable = machine->pageTable;
+//	numPages = machine->pageTableSize;
 }
 
 //----------------------------------------------------------------------
@@ -227,10 +224,64 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
+	machine->pageTable = pageTable;
+	machine->pageTableSize = numPages;
 }
 
 bool AddrSpace::GetFull() {
 	return memFull;
+}
+
+void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
+	char temp[128];
+	this->argc = argc;
+	this->argv = new char*[argc];
+
+	this->argv[0] = new char[strlen(filename) + 1];
+	strcpy(this->argv[0], filename);
+
+	for (int i = 0; i < argc; i++) {
+		int arg_ptr;
+		bzero(temp, 128);
+		machine->ReadMem((int) argv + 4 * i, 4, &arg_ptr);
+		ReadString(arg_ptr, temp);
+		this->argv[i + 1] = new char[strlen(temp) + 1];
+		strcpy(this->argv[i + 1], temp);
+	}
+
+}
+
+void AddrSpace::LoadArguments(){
+	int args[argc];
+	int strLen;
+
+	int sp = numPages * PageSize;
+	int cantPag = 0;
+	int tmpSize = 4 * argc;
+
+	for (int i = 0; i < argc; i++) {
+		strLen = strlen(argv[i]) + 1;
+		tmpSize += strLen;  
+		if (tmpSize > PageSize * cantPag ){
+			cantPag += 1;
+			pageTable[numPages - cantPag].valid =  true;
+			bzero((machine->mainMemory) + (pageTable[numPages - cantPag]
+						.physicalPage * PageSize), PageSize);
+		}
+		sp = sp - strLen;
+		WriteString(sp, argv[i], strLen);
+		args[i] = sp;
+	}
+
+	sp = sp - argc * 4;
+	sp = sp - sp % 4;
+	machine->WriteRegister(StackReg, sp - 16);
+	machine->WriteRegister(4,argc);
+	machine->WriteRegister(5,sp);
+
+	for (int i = 0; i < argc; i++) {
+		machine->WriteMem(sp, 4, args[i]);
+		sp = sp + 4;
+	};
+
 }

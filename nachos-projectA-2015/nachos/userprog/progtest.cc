@@ -20,7 +20,7 @@
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
-SpaceId exec(char* filename);
+SpaceId exec(char* filename, int argc, int argv);
 
 void
 StartProcess(char *filename)
@@ -48,7 +48,9 @@ StartProcess(char *filename)
 					// the address space exits
 					// by doing the syscall "exit"
 */
-	exec(filename);
+	char* argv[1];
+	argv[0] = "\0";
+	exec(filename, 1, (int) argv);
 }
 
 // Data structures needed for the console test.  Threads making

@@ -80,7 +80,8 @@ USERPROG_H = ../userprog/addrspace.h\
 	../machine/translate.h\
 	../userprog/pagemap.h\
 	../userprog/process.h\
-	../userprog/user_translate.h
+	../userprog/user_translate.h\
+	../userprog/exception_utils.h
 
 USERPROG_C = ../userprog/addrspace.cc\
 	../userprog/bitmap.cc\
@@ -93,10 +94,12 @@ USERPROG_C = ../userprog/addrspace.cc\
 	../machine/translate.cc\
 	../userprog/pagemap.cc\
 	../userprog/process.cc\
-	../userprog/user_translate.cc
+	../userprog/user_translate.cc\
+	../userprog/exception_utils.cc
 
 USERPROG_O = addrspace.o bitmap.o exception.o progtest.o console.o machine.o \
-	mipssim.o translate.o pagemap.o synchconsole.o process.o user_translate.o
+	mipssim.o translate.o pagemap.o synchconsole.o process.o user_translate.o \
+	exception_utils.o
 
 VM_H =
 VM_C =
