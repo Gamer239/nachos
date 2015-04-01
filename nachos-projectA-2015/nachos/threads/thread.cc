@@ -371,7 +371,7 @@ ThreadStatus Thread::GetStatus() {
 }
 
 void Thread::WaitOnReturn() {
-	printf("[%s] About to P on dis sem\n", name);
+	// printf("[%s] About to P on dis sem\n", name);
 	joinSem->P();
 }
 #endif

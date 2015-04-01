@@ -55,7 +55,7 @@ void startProcess(int n) {
 	currentThread->space->InitRegisters();
 	currentThread->space->RestoreState();
 	// currentThread->space->LoadArguments();
-	printf("[IN startProcess]: currentThread is: %s\n", currentThread->getName());
+	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
 	// ASSERT(false);
 }
@@ -81,9 +81,9 @@ SpaceId exec(char *filename) {
 	// in case our parent thread somehow was not put into the procmap
 	if (Process::GetProcMap()->find(parentId) != Process::GetProcMap()->end()) {
 		parent = Process::GetProcMap()->at(parentId);
-		printf("EXEC[%s]: Parent of %s is %s\n", currentThread->getName(), thread->getName(), parent->GetThread()->getName());
+		DEBUG('s', "EXEC[%s]: Parent of %s is %s\n", currentThread->getName(), thread->getName(), parent->GetThread()->getName());
 	} else {
-		printf("EXEC[%s]: we didn't find ourself in the procmap\n", currentThread->getName());
+		DEBUG('s', "EXEC[%s]: we didn't find ourself in the procmap\n", currentThread->getName());
 		parent = new Process(currentThread, parentId);
 		Process::GetProcMap()->insert(std::pair<int, Process*>(parentId, parent));
 	}
@@ -130,14 +130,14 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Exit:
 				{
-					printf("Call to Syscall Exit (SC_Exit).\n");
+					DEBUG('s', "Call to Syscall Exit (SC_Exit).\n");
 					// I don't think we need to care about the value passed to use
 					// by the user program's Exit call.
 
 					Process * currentProcess;
 					if (Process::GetProcMap()->find(currentThread->GetId()) != 
 							Process::GetProcMap()->end()) {
-						printf("current process found in procmap\n");
+						// printf("current process found in procmap\n");
 						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
 					} else {
 						ASSERT(false); // should never happen
@@ -146,20 +146,20 @@ void ExceptionHandler(ExceptionType which) {
 					Process * parent = currentProcess->GetParent();
 					Thread * parentThread = parent->GetThread();
 					if (parent != NULL && currentThread->GetStatus() != ZOMBIE) { // I have parent
-						printf("I have a parent\n");
+						// printf("I have a parent\n");
 						currentProcess->SetReturnValue(machine->ReadRegister(4));
 						if (parentThread->GetStatus() == JOINING) {
-							printf("my(%d) parent(%d) is waiting for me\n", currentThread->GetId(), parentThread->GetId());
+							// printf("my(%d) parent(%d) is waiting for me\n", currentThread->GetId(), parentThread->GetId());
 							parentThread->joinSem->V();
 						 } else {
-							printf("my(%d) parent(%d) is not blocked(%d)\n", currentThread->GetId(), parentThread->GetId(), parentThread->GetStatus());
+							// printf("my(%d) parent(%d) is not blocked(%d)\n", currentThread->GetId(), parentThread->GetId(), parentThread->GetStatus());
 						 }
 
 					}
 
-					printf("gonna check for children\n");
+					// printf("gonna check for children\n");
 					if (!currentProcess->GetChildren()->IsEmpty()) {
-						printf("I have children\n");
+						// printf("I have children\n");
 						currentProcess->GetChildren()->Mapcar(Process::SetZombie);
 					}
 
@@ -168,7 +168,7 @@ void ExceptionHandler(ExceptionType which) {
 					delete currentProcess;
 					delete currentThread->space;
 					currentThread->space = NULL;
-					printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
+					DEBUG('s', "SC_EXIT: currentThread is: %s\n", currentThread->getName());
 					currentThread->Finish();
 					machine->WriteRegister(2, 0);
 					break;
@@ -182,18 +182,18 @@ void ExceptionHandler(ExceptionType which) {
 						i++;
 					} while (c != '\0');
 
-					printf("Call to Syscall Exec (SC_Exec).\n");
+					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
 					int ret = exec(buf);
-					printf("ret: %d\n", ret);
+					// printf("ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
 					break;
 				}
 
 			case SC_Join:
 				{
-					printf("Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
+					DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
 					scheduler->Print();
-					printf("join(spaceid = %d)\n", machine->ReadRegister(4));
+					// printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
 					int retVal;
 
@@ -203,23 +203,23 @@ void ExceptionHandler(ExceptionType which) {
 					// target process is in procmap
 	
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
-						printf("JOIN - found pid in procmap!\n");
+						// printf("JOIN - found pid in procmap!\n");
 						target = Process::GetProcMap()->at(pid);
 						targetParent = target->GetParent()->GetThread();
 						// targets parent is us
 						if (targetParent->GetId() == currentThread->GetId()) {
-							printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
-									targetParent->GetId(), currentThread->GetId());
+							// printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
+								//	targetParent->GetId(), currentThread->GetId());
 							if (target->GetThread()->GetId() != FINISHED) {
-								printf("JOIN - target is not finished, waiting\n");
+								// printf("JOIN - target is not finished, waiting\n");
 								currentThread->setStatus(JOINING);
 								currentThread->WaitOnReturn();
 							}
-							printf("JOIN - target is done, getting return value\n");
+							// printf("JOIN - target is done, getting return value\n");
 							retVal = target->GetReturnValue();
 						} else {
-							printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
-									targetParent->GetId(), currentThread->GetId());
+							// printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
+								//	targetParent->GetId(), currentThread->GetId());
 							retVal = -1;
 						}
 					} else {
@@ -234,11 +234,11 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Create:
 				{
-					printf("Call to Syscall Create (SC_Create).\n");
+					DEBUG('s', "Call to Syscall Create (SC_Create).\n");
 					// char* filename arg, we need to read this buf
 
 					addr =  machine->ReadRegister(4);
-					printf("the address is %d\n", addr);
+					// printf("the address is %d\n", addr);
 					bzero( buf, BUFFER_SIZE);
 					i=0;
 					c='1';
@@ -250,10 +250,10 @@ void ExceptionHandler(ExceptionType which) {
 						i++;
 					}
 
-					printf("total i's %d\n", i);
+					// printf("total i's %d\n", i);
 
 					//TODO: remove this line below
-					printf("\ncreating file %s|\n", buf);
+					// printf("\ncreating file %s|\n", buf);
 
 					// a file size of zero is fine for now
 					// we'll add data once we open it
@@ -264,7 +264,7 @@ void ExceptionHandler(ExceptionType which) {
 				}
 
 			case SC_Open: {
-							  printf("Call to Syscall Open (SC_Open).\n");
+							  DEBUG('s', "Call to Syscall Open (SC_Open).\n");
 							  addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
 							  c = '1';
 							  i = 0;
@@ -290,7 +290,7 @@ void ExceptionHandler(ExceptionType which) {
 							  {
 								  mapped_id = -1;
 							  }
-							  printf("open id is %d\n", mapped_id);
+							  // printf("open id is %d\n", mapped_id);
 							  machine->WriteRegister(2, mapped_id);
 							  break;
 						  }
@@ -398,7 +398,7 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Close:
 						  {
-							  printf("Call to Syscall Close (SC_Close).\n");
+							  DEBUG('s', "Call to Syscall Close (SC_Close).\n");
 							  int mapped_id = (int) machine->ReadRegister(4);
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( )
 									  && ( mapped_id != 0 || mapped_id != 1 ) )
@@ -416,12 +416,12 @@ void ExceptionHandler(ExceptionType which) {
 						  break;
 
 			case SC_Fork:
-						  printf("Call to Syscall Fork (SC_Fork).\n");
-						  printf("fork(%d)\n", machine->ReadRegister(4));
+						  DEBUG('s', "Call to Syscall Fork (SC_Fork).\n");
+						  // printf("fork(%d)\n", machine->ReadRegister(4));
 						  break;
 
 			case SC_Yield:
-						  printf("Call to Syscall Yield (SC_Yield).\n");
+						  DEBUG('s', "Call to Syscall Yield (SC_Yield).\n");
 						  break;
 
 			default:
