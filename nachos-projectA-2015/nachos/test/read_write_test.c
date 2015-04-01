@@ -11,6 +11,7 @@
  */
 
 #include "syscall.h"
+#include "sys_libs.c"
 //#include <string.h>
 
 #define BUFFER_SIZE 16
@@ -31,7 +32,7 @@ main()
 	{
 		Write( "open failed\n", 13, ConsoleOutput );
 	}
-	Write(testString, 15, fileId );
+	Write(testString, strlen(testString), fileId );
 	Close( fileId );
 	fileId = Open( filename );
 	if ( fileId < 2 )
