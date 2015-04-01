@@ -26,21 +26,22 @@ main()
 	char buffer[BUFFER_SIZE];
 	char* filename = "my_file_name";
 	char * testString = "testing hello\n";
+	char * open_failed = "open failed\n";
 	Create( filename );
 	OpenFileId fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
 	Write(testString, strlen(testString), fileId );
 	Close( fileId );
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, 15, fileId );
-	Write( buffer, 15, ConsoleOutput );
+	Read( buffer, strlen(buffer), fileId );
+	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
 	//mess with the write buffer size
@@ -48,17 +49,17 @@ main()
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Write(testString, 15+10, fileId );
+	Write(testString, strlen(testString)+10, fileId );
 	Close( fileId );
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );;
 	}
-	Read( buffer, 15, fileId );
-	Write( buffer, 15, ConsoleOutput );
+	Read( buffer, strlen(buffer), fileId );
+	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
 	//mess with the read buffer size
@@ -66,17 +67,17 @@ main()
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Write(testString, 15, fileId );
+	Write(testString, strlen(testString), fileId );
 	Close( fileId );
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, 15+10, fileId );
-	Write( buffer, 15, ConsoleOutput );
+	Read( buffer, strlen(buffer)+10, fileId );
+	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
 	//TODO: provide to small of a read buffer
@@ -84,17 +85,17 @@ main()
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Write(testString, 15, fileId );
+	Write(testString, strlen(testString), fileId );
 	Close( fileId );
 	fileId = Open( filename );
 	if ( fileId < 2 )
 	{
-		Write( "open failed\n", 13, ConsoleOutput );
+		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, 15+10, fileId );
-	Write( buffer, 15, ConsoleOutput );
+	Read( buffer, strlen(buffer)+10, fileId );
+	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
   Exit(0);
