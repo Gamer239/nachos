@@ -117,7 +117,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 				noffH.code.virtualAddr, noffH.code.size);
 
-		for (int i = 0; i < noffH.code.size; i++) {	
+		for (i = 0; i < noffH.code.size; i++) {	
 			int pageNum = (noffH.code.virtualAddr + i) / PageSize;
 			int offset = (noffH.code.virtualAddr + i) - (pageNum * PageSize);
 			DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
@@ -132,7 +132,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 				noffH.initData.virtualAddr, noffH.initData.size);
 		
-		for (int i = 0; i < noffH.initData.size; i++) {
+		for (i = 0; i < noffH.initData.size; i++) {
 			int pageNum = (noffH.initData.virtualAddr + i) / PageSize;
 			int offset = (noffH.initData.virtualAddr + i) - (pageNum * PageSize);
 			DEBUG('a', "Initializing code segment, at page %d, offset %d\n", 
