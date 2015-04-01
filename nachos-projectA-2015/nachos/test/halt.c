@@ -24,6 +24,6 @@ main()
 	//	}
 	//	i++;
 	//}
-    Exit(0);
+    Exit(15);
     /* not reached */
 }

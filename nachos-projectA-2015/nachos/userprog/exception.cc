@@ -184,7 +184,7 @@ void ExceptionHandler(ExceptionType which) {
 
 					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
 					int ret = exec(buf);
-					// printf("ret: %d\n", ret);
+					printf("EXEC ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
 					break;
 				}
@@ -193,7 +193,7 @@ void ExceptionHandler(ExceptionType which) {
 				{
 					DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
 					// scheduler->Print();
-					// printf("join(spaceid = %d)\n", machine->ReadRegister(4));
+					printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
 					int retVal;
 
@@ -223,7 +223,7 @@ void ExceptionHandler(ExceptionType which) {
 							retVal = -1;
 						}
 					} else {
-						printf("JOIN - did not find pid in procmap\n");
+						// printf("JOIN - did not find pid in procmap\n");
 						retVal = -1;
 					}
 					interrupt->SetLevel(oldLevel);
