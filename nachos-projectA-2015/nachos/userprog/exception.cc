@@ -135,7 +135,7 @@ void ExceptionHandler(ExceptionType which) {
 					// by the user program's Exit call.
 
 					Process * currentProcess;
-					if (Process::GetProcMap()->find(currentThread->GetId()) != 
+					if (Process::GetProcMap()->find(currentThread->GetId()) !=
 							Process::GetProcMap()->end()) {
 						printf("current process found in procmap\n");
 						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
@@ -173,7 +173,7 @@ void ExceptionHandler(ExceptionType which) {
 					machine->WriteRegister(2, 0);
 					break;
 				}
-			case SC_Exec: 
+			case SC_Exec:
 				{
 					addr = machine->ReadRegister(4);
 					do {
@@ -203,6 +203,7 @@ void ExceptionHandler(ExceptionType which) {
 					// target process is in procmap
 	
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
+<<<<<<< HEAD
 						printf("JOIN - found pid in procmap!\n");
 						target = Process::GetProcMap()->at(pid);
 						targetParent = target->GetParent()->GetThread();
@@ -225,6 +226,9 @@ void ExceptionHandler(ExceptionType which) {
 					} else {
 						printf("JOIN - did not find pid in procmap\n");
 						retVal = -1;
+=======
+						// this process
+>>>>>>> 1d15203f2ec859224be2e9a4bcc734f91f765a72
 					}
 					interrupt->SetLevel(oldLevel);
 					printf("JOIN - retVal: %d\n", retVal);
@@ -235,25 +239,30 @@ void ExceptionHandler(ExceptionType which) {
 			case SC_Create:
 				{
 					printf("Call to Syscall Create (SC_Create).\n");
+<<<<<<< HEAD
 					// char* filename arg, we need to read this buf
 
 					addr =  machine->ReadRegister(4);
 					printf("the address is %d\n", addr);
+=======
+					addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+					//printf("the address is %d\n", addr);
+>>>>>>> 1d15203f2ec859224be2e9a4bcc734f91f765a72
 					bzero( buf, BUFFER_SIZE);
 					i=0;
 					c='1';
 					while (c != '\0' && i < BUFFER_SIZE) {
 						machine->ReadMem(addr + i, 1, (int *) &c);
 						//sprintf(buf + strlen(buf), "%c", c);
-						printf("%c", c);
+						//printf("%c", c);
 						buf[i]=c;
 						i++;
 					}
 
-					printf("total i's %d\n", i);
+					//printf("total i's %d\n", i);
 
 					//TODO: remove this line below
-					printf("\ncreating file %s|\n", buf);
+					//printf("\ncreating file %s|\n", buf);
 
 					// a file size of zero is fine for now
 					// we'll add data once we open it
@@ -290,7 +299,7 @@ void ExceptionHandler(ExceptionType which) {
 							  {
 								  mapped_id = -1;
 							  }
-							  printf("open id is %d\n", mapped_id);
+							  //printf("open id is %d\n", mapped_id);
 							  machine->WriteRegister(2, mapped_id);
 							  break;
 						  }
@@ -303,11 +312,12 @@ void ExceptionHandler(ExceptionType which) {
 							  int read = 0;
 							  char buff;
 							  bool write;
+								int bytes_read = 1;
 							  //check to make sure that our file handler exists
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								  while (read < size)
+								  while (read < size && bytes_read > 0)
 								  {
 									  if ( mapped_id == ConsoleInput )
 									  {
@@ -315,7 +325,7 @@ void ExceptionHandler(ExceptionType which) {
 									  }
 									  else if ( mapped_id != ConsoleOutput )
 									  {
-										  fileId->Read(&buff, 1);
+										  bytes_read = fileId->Read(&buff, 1);
 									  }
 									  else
 									  {
@@ -337,6 +347,7 @@ void ExceptionHandler(ExceptionType which) {
 							  break;
 						  }
 
+<<<<<<< HEAD
 			case SC_Write:
 						  {
 							  char * addr = (char *) machine->ReadRegister(4);
@@ -375,6 +386,60 @@ void ExceptionHandler(ExceptionType which) {
 										  break;
 									  }
 									  wrote++;
+=======
+			case SC_Write: {
+
+							   char * addr = (char *) machine->ReadRegister(4);
+							   int size = (int) machine->ReadRegister(5);
+							   const int mapped_id = (int) machine->ReadRegister(6);
+
+							   //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
+
+							   int wrote = 0;
+							   int value;
+							   char buff;
+							   bool read;
+								int bytes_written = 1;
+							   //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
+							   if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
+							   {
+								   OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+								   //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
+								   while( wrote < size && buff != EOF && bytes_written > 0 )
+								   {
+									   //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
+									   read = machine->ReadMem((int) (addr + wrote), 1, &value);
+									   buff = value;
+									   //printf( "addr %d size %d mapped_id %d 261\n", addr, size, mapped_id);
+									   //printf("%c", buff);
+									   if ( mapped_id == ConsoleOutput )
+									   {
+										   WriteFile( ConsoleOutput, &buff, 1 );
+									   }
+									   else if ( mapped_id != ConsoleInput )
+									   {
+										   bytes_written = fileId->Write(&buff, 1);
+									   }
+									   else
+									   {
+										   //printf("mapped_id %d consoleinput %d\n", mapped_id, ConsoleInput);
+										   break;
+									   }
+									   wrote++;
+								   }
+							   }
+							   else
+							   {
+								   //TODO: we never write anything because the file isnt open, handle this?
+								   printf( "Error writing file %d\n", mapped_id );
+							   }
+							   // printf("\nWrote %d bytes\n", wrote);
+							   /*
+								  while (wrote < size && buf != EOF) {
+								  read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);
+								  WriteFile(fileid, &buf, 1);
+								  wrote++;
+>>>>>>> 1d15203f2ec859224be2e9a4bcc734f91f765a72
 								  }
 							  }
 							  else
