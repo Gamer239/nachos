@@ -1,18 +1,5 @@
 #include "syscall.h"
-
-
-int strcomp(char* str1, char* str2) {
-
-	int i;
-	for (i = 0; i < 16; i++) {
-		if (str1[i] != str2[i]) {
-			return 0;		
-		}
-		if (str1[i] == '\0' || str2[i] == '\0') break;
-	}
-	return 1;
-
-}
+#include "sys_libs.c"
 
 	int
 main()
@@ -34,7 +21,7 @@ main()
 		Write(prompt, 2, output);
 		i = 0;
 		do {
-			bytes = Read(&buffer[i], 1, input); 
+			bytes = Read(&buffer[i], 1, input);
 		} while( buffer[i++] != '\n' );
 
 		buffer[--i] = '\0';
@@ -46,10 +33,9 @@ main()
 				newProc = Exec(buffer, argv);
 				Write("Got PID: ", 9, output);
 				Write((char)(((int) '0') + newProc), 1, output);
-				Write("\n", 1, output);	
+				Write("\n", 1, output);
 				Join(newProc);
 			}
 		}
 	}
 }
-
