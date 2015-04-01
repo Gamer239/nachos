@@ -14,7 +14,7 @@
 #include "sys_libs.c"
 //#include <string.h>
 
-#define BUFFER_SIZE 16
+#define BUFFER_SIZE 256
 
 int
 main()
@@ -25,7 +25,7 @@ main()
 	*/
 	char buffer[BUFFER_SIZE];
 	char* filename = "my_file_name";
-	char * testString = "testing hello\n";
+	char * testString = "testing hello how are you today fine sir?\n";
 	char * open_failed = "open failed\n";
 	Create( filename );
 	OpenFileId fileId = Open( filename );
