@@ -43,8 +43,8 @@ Thread::Thread(char* threadName)
 
 Thread::Thread(char* threadName, int priority) {
 	id = Thread::nextId++;
-    name = threadName;
-    stackTop = NULL;
+	strcpy(name, threadName);
+	stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
 #ifdef USER_PROGRAM
@@ -60,6 +60,7 @@ Thread::Thread(char* threadName, int priority) {
 		#endif
 #endif
 	threadPriority = priority;
+	printf("Created Thread [%s] (%d)\n", name, id);
 }
 #endif
 

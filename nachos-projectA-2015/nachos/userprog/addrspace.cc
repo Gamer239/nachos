@@ -87,6 +87,12 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 
+
+	printf("Current status of pageMap before allocate:\n");
+	for (int i = 0; i < NumPhysPages; i++) {
+		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', i != 0 && i % 10 == 0 ? '\n' : ' ');	
+	}
+	printf("\n");
 // first, set up the translation
 	memFull = false; 
     pageTable = new TranslationEntry[numPages];

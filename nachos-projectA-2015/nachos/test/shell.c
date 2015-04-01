@@ -32,9 +32,7 @@ main()
 			} else {
 				newProc = Exec(buffer, argv);
 				Write("PID: ", 5, output);
-				buffer[0] = ((char) (newProc + 48));
-				buffer[1] = '\0';
-				Write(buffer, 2, output);
+				Write(itoa(newProc), strlen(itoa(newProc)), output);
 				Write("\n", 1, output);
 				Join(newProc);
 			}
