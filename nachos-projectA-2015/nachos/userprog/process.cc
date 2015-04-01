@@ -3,7 +3,7 @@
 std::map<int, Process*>* Process::procmap = NULL;
 
 Process::Process(Thread* aThread, int aid) {
-	printf("Created new process %s(%d)\n", aThread->getName(), aid);
+	// printf("Created new process %s(%d)\n", aThread->getName(), aid);
 	children = new List;
 	thread = aThread;
 	id = aid;
