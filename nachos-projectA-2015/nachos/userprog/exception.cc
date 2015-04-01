@@ -133,7 +133,7 @@ void ExceptionHandler(ExceptionType which) {
 					// by the user program's Exit call.
 
 					Process * currentProcess;
-					if (Process::GetProcMap()->find(currentThread->GetId()) != 
+					if (Process::GetProcMap()->find(currentThread->GetId()) !=
 							Process::GetProcMap()->end()) {
 						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
 					} else {
@@ -150,7 +150,7 @@ void ExceptionHandler(ExceptionType which) {
 					}
 
 					if (!currentProcess->GetChildren()->IsEmpty()) {
-						currentProcess->GetChildren()->Mapcar(Process::SetZombie);	
+						currentProcess->GetChildren()->Mapcar(Process::SetZombie);
 					}
 
 
@@ -165,7 +165,7 @@ void ExceptionHandler(ExceptionType which) {
 					machine->WriteRegister(2, 0);
 					break;
 				}
-			case SC_Exec: 
+			case SC_Exec:
 				{
 					addr = machine->ReadRegister(4);
 					do {
@@ -187,7 +187,7 @@ void ExceptionHandler(ExceptionType which) {
 					printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
-						// this process 
+						// this process
 					}
 					break;
 				}
@@ -196,22 +196,22 @@ void ExceptionHandler(ExceptionType which) {
 				{
 					printf("Call to Syscall Create (SC_Create).\n");
 					addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
-					printf("the address is %d\n", addr);
+					//printf("the address is %d\n", addr);
 					bzero( buf, BUFFER_SIZE);
 					i=0;
 					c='1';
 					while (c != '\0' && i < BUFFER_SIZE) {
 						machine->ReadMem(addr + i, 1, (int *) &c);
 						//sprintf(buf + strlen(buf), "%c", c);
-						printf("%c", c);
+						//printf("%c", c);
 						buf[i]=c;
 						i++;
 					}
 
-					printf("total i's %d\n", i);
+					//printf("total i's %d\n", i);
 
 					//TODO: remove this line below
-					printf("\ncreating file %s|\n", buf);
+					//printf("\ncreating file %s|\n", buf);
 
 					// a file size of zero is fine for now
 					// we'll add data once we open it
@@ -248,7 +248,7 @@ void ExceptionHandler(ExceptionType which) {
 							  {
 								  mapped_id = -1;
 							  }
-							  printf("open id is %d\n", mapped_id);
+							  //printf("open id is %d\n", mapped_id);
 							  machine->WriteRegister(2, mapped_id);
 							  break;
 						  }
@@ -261,11 +261,12 @@ void ExceptionHandler(ExceptionType which) {
 							  int read = 0;
 							  char buff;
 							  bool write;
+								int bytes_read = 1;
 							  //check to make sure that our file handler exists
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								  while (read < size)
+								  while (read < size && bytes_read > 0)
 								  {
 									  if ( mapped_id == ConsoleInput )
 									  {
@@ -273,7 +274,7 @@ void ExceptionHandler(ExceptionType which) {
 									  }
 									  else if ( mapped_id != ConsoleOutput )
 									  {
-										  fileId->Read(&buff, 1);
+										  bytes_read = fileId->Read(&buff, 1);
 									  }
 									  else
 									  {
@@ -307,12 +308,13 @@ void ExceptionHandler(ExceptionType which) {
 							   int value;
 							   char buff;
 							   bool read;
+								int bytes_written = 1;
 							   //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
 							   if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							   {
 								   OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
 								   //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
-								   while( wrote < size && buff != EOF )
+								   while( wrote < size && buff != EOF && bytes_written > 0 )
 								   {
 									   //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
 									   read = machine->ReadMem((int) (addr + wrote), 1, &value);
@@ -325,7 +327,7 @@ void ExceptionHandler(ExceptionType which) {
 									   }
 									   else if ( mapped_id != ConsoleInput )
 									   {
-										   fileId->Write(&buff, 1);
+										   bytes_written = fileId->Write(&buff, 1);
 									   }
 									   else
 									   {
