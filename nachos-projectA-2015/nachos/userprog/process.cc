@@ -8,6 +8,7 @@ Process::Process(Thread* aThread, int aid) {
 	thread = aThread;
 	id = aid;
 	GetProcMap()->insert(std::pair<int, Process*>(id, this));
+	finished = false;
 }
 
 Process::~Process() {
@@ -52,4 +53,12 @@ void Process::SetReturnValue(int val) {
 
 int Process::GetReturnValue() {
 	return returnVal;
+}
+
+bool Process::GetFinished() {
+	return finished;
+}
+
+void Process::SetFinished(bool f) {
+	finished = f;
 }

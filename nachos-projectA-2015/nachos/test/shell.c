@@ -31,8 +31,8 @@ main()
 				Exit(0);
 			} else {
 				newProc = Exec(buffer, argv);
-				Write("Got PID: ", 9, output);
-				Write((char)(((int) '0') + newProc), 1, output);
+				Write("PID: ", 5, output);
+				Write(itoa(newProc), strlen(itoa(newProc)), output);
 				Write("\n", 1, output);
 				Join(newProc);
 			}

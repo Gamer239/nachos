@@ -39,7 +39,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort syscall create read_write_test
+all: halt shell matmult sort syscall create read_write_test retadd simple1 simple2 simple3 simple4 simple5
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -51,6 +51,46 @@ halt.o: halt.c
 halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
+
+simple1.o: simple1.c
+	$(CC) $(CFLAGS) -c simple1.c
+simple1: simple1.o start.o
+	$(LD) $(LDFLAGS) start.o simple1.o -o simple1.coff
+	../bin/coff2noff simple1.coff simple1
+
+
+simple2.o: simple2.c
+	$(CC) $(CFLAGS) -c simple2.c
+simple2: simple2.o start.o
+	$(LD) $(LDFLAGS) start.o simple2.o -o simple2.coff
+	../bin/coff2noff simple2.coff simple2
+
+
+simple3.o: simple3.c
+	$(CC) $(CFLAGS) -c simple3.c
+simple3: simple3.o start.o
+	$(LD) $(LDFLAGS) start.o simple3.o -o simple3.coff
+	../bin/coff2noff simple3.coff simple3
+
+
+simple4.o: simple4.c
+	$(CC) $(CFLAGS) -c simple4.c
+simple4: simple4.o start.o
+	$(LD) $(LDFLAGS) start.o simple4.o -o simple4.coff
+	../bin/coff2noff simple4.coff simple4
+
+
+simple5.o: simple5.c
+	$(CC) $(CFLAGS) -c simple5.c
+simple5: simple5.o start.o
+	$(LD) $(LDFLAGS) start.o simple5.o -o simple5.coff
+	../bin/coff2noff simple5.coff simple5
+
+retadd.o: retadd.c
+	$(CC) $(CFLAGS) -c retadd.c
+retadd: retadd.o start.o
+	$(LD) $(LDFLAGS) start.o retadd.o -o retadd.coff
+	../bin/coff2noff retadd.coff retadd
 
 read_write_test.o: read_write_test.c
 	$(CC) $(CFLAGS) -c read_write_test.c

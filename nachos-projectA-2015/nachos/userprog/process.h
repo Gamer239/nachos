@@ -25,6 +25,8 @@ class Process {
 		void SetReturnValue(int val);
 		int GetReturnValue();
 
+		void SetFinished(bool f);
+		bool GetFinished();
 
 	private: 
 		int id;
@@ -33,6 +35,7 @@ class Process {
 		Thread * thread;
 		static std::map<int, Process*>* procmap;
 		int returnVal;
+		bool finished;
 
 };
 
