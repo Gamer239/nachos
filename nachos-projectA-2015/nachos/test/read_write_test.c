@@ -78,5 +78,23 @@ main()
 	Write( buffer, 15, ConsoleOutput );
 	Close( fileId );
 
+	//TODO: provide to small of a read buffer
+	Create( filename );
+	fileId = Open( filename );
+	if ( fileId < 2 )
+	{
+		Write( "open failed\n", 13, ConsoleOutput );
+	}
+	Write(testString, 15, fileId );
+	Close( fileId );
+	fileId = Open( filename );
+	if ( fileId < 2 )
+	{
+		Write( "open failed\n", 13, ConsoleOutput );
+	}
+	Read( buffer, 15+10, fileId );
+	Write( buffer, 15, ConsoleOutput );
+	Close( fileId );
+
   Exit(0);
 }
