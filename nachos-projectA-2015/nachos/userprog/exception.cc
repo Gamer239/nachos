@@ -135,7 +135,7 @@ void ExceptionHandler(ExceptionType which) {
 					// by the user program's Exit call.
 
 					Process * currentProcess;
-					if (Process::GetProcMap()->find(currentThread->GetId()) != 
+					if (Process::GetProcMap()->find(currentThread->GetId()) !=
 							Process::GetProcMap()->end()) {
 						// printf("current process found in procmap\n");
 						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
@@ -173,7 +173,7 @@ void ExceptionHandler(ExceptionType which) {
 					machine->WriteRegister(2, 0);
 					break;
 				}
-			case SC_Exec: 
+			case SC_Exec:
 				{
 					addr = machine->ReadRegister(4);
 					do {
@@ -201,7 +201,7 @@ void ExceptionHandler(ExceptionType which) {
 					Process* target;
 					Thread* targetParent;
 					// target process is in procmap
-	
+
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
 						// printf("JOIN - found pid in procmap!\n");
 						target = Process::GetProcMap()->at(pid);
@@ -303,11 +303,12 @@ void ExceptionHandler(ExceptionType which) {
 							  int read = 0;
 							  char buff;
 							  bool write;
+								int read_count = 1;
 							  //check to make sure that our file handler exists
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								  while (read < size)
+								  while (read < size && read_count > 0)
 								  {
 									  if ( mapped_id == ConsoleInput )
 									  {
@@ -315,7 +316,7 @@ void ExceptionHandler(ExceptionType which) {
 									  }
 									  else if ( mapped_id != ConsoleOutput )
 									  {
-										  fileId->Read(&buff, 1);
+										  read_count = fileId->Read(&buff, 1);
 									  }
 									  else
 									  {
@@ -349,12 +350,13 @@ void ExceptionHandler(ExceptionType which) {
 							  int value;
 							  char buff;
 							  bool read;
+								int write_count = 1;
 							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
 								  //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
-								  while( wrote < size && buff != EOF )
+								  while( wrote < size && buff != EOF && write_count > 0 )
 								  {
 									  //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
 									  read = machine->ReadMem((int) (addr + wrote), 1, &value);
@@ -367,7 +369,7 @@ void ExceptionHandler(ExceptionType which) {
 									  }
 									  else if ( mapped_id != ConsoleInput )
 									  {
-										  fileId->Write(&buff, 1);
+										  write_count = fileId->Write(&buff, 1);
 									  }
 									  else
 									  {
