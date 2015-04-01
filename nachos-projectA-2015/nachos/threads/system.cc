@@ -19,6 +19,8 @@ Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+#define SLICE 20
+
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -72,9 +74,9 @@ static int quant = 0;
 
 static void TimeSlicingHandler(int dummy) {
 
-	if (++quant % 20 == 0) {
+	if (++quant % SLICE == 0) {
 		quant = 0;
-		printf("Going to Yield %s\n", currentThread->getName());
+		// printf("Going to Yield %s\n", currentThread->getName());
 		interrupt->YieldOnReturn();
 	}
 

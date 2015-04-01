@@ -23,6 +23,7 @@ class Process {
 
 		static void SetZombie(int arg);
 		void SetReturnValue(int val);
+		int GetReturnValue();
 
 
 	private: 

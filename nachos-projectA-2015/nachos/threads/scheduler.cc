@@ -108,8 +108,10 @@ Scheduler::Run (Thread *nextThread)
     currentThread = nextThread;		    // switch to the next thread
     currentThread->setStatus(RUNNING);      // nextThread is now running
     
-    DEBUG('t', "Switching from thread \"%s\" to thread \"%s\"\n",
-	  oldThread->getName(), nextThread->getName());
+    DEBUG('t', "Switching from thread \"%s\"(%d) to thread \"%s\"(%d)\n",
+	  oldThread->getName(), oldThread->GetId(), nextThread->getName(),
+	  nextThread->GetId());
+	scheduler->Print();
 
     // This is a machine-dependent assembly language routine defined 
     // in switch.s.  You may have to think
@@ -117,10 +119,11 @@ Scheduler::Run (Thread *nextThread)
     // of view of the thread and from the perspective of the "outside world".
 
     SWITCH(oldThread, nextThread);
-    
+
     DEBUG('t', "\n\nNow in thread \"%s\"(%d)\n\n", currentThread->getName(),
 			currentThread->GetId());
 
+	scheduler->Print();
 	printf("size of readyList: %d\n", readyList->Size());
     // If the old thread gave up the processor because it was finishing,
     // we need to delete its carcass.  Note we cannot delete the thread

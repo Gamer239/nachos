@@ -61,6 +61,7 @@ void startProcess(int n) {
 }
 
 SpaceId exec(char *filename) {
+	interrupt->SetLevel(IntOff);
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
 
@@ -80,13 +81,13 @@ SpaceId exec(char *filename) {
 	// in case our parent thread somehow was not put into the procmap
 	if (Process::GetProcMap()->find(parentId) != Process::GetProcMap()->end()) {
 		parent = Process::GetProcMap()->at(parentId);
-		printf("Parent of %s is %s\n", thread->getName(), parent->GetThread()->getName());
+		printf("EXEC[%s]: Parent of %s is %s\n", currentThread->getName(), thread->getName(), parent->GetThread()->getName());
 	} else {
-		printf("we didn't find it in the procmap\n");
+		printf("EXEC[%s]: we didn't find ourself in the procmap\n", currentThread->getName());
 		parent = new Process(currentThread, parentId);
-		parent->AddChild(child);
 		Process::GetProcMap()->insert(std::pair<int, Process*>(parentId, parent));
 	}
+	parent->AddChild(child);
 
 	child->SetParent(parent);
 
@@ -106,6 +107,7 @@ SpaceId exec(char *filename) {
 
 	thread->Fork(startProcess, 0);
 
+	interrupt->Enable();
 	return child->GetThread()->GetId();
 
 }
@@ -122,19 +124,20 @@ void ExceptionHandler(ExceptionType which) {
 	if (which == SyscallException) {
 		switch (type) {
 			case SC_Halt:
-				printf("Shutdown, initiated by user program.\n");
+				DEBUG('s', "Shutdown, initiated by user program.\n");
 				interrupt->Halt();
 				break;
 
 			case SC_Exit:
 				{
-					printf("Call to Syscall Exit (SC_Exit).\n");
+					DEBUG('s', "Call to Syscall Exit (SC_Exit).\n");
 					// I don't think we need to care about the value passed to use
 					// by the user program's Exit call.
 
 					Process * currentProcess;
 					if (Process::GetProcMap()->find(currentThread->GetId()) !=
 							Process::GetProcMap()->end()) {
+						// DEBUG('e', "SC_EXIT: current process found in procmap\n");
 						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
 					} else {
 						ASSERT(false); // should never happen
@@ -143,24 +146,29 @@ void ExceptionHandler(ExceptionType which) {
 					Process * parent = currentProcess->GetParent();
 					Thread * parentThread = parent->GetThread();
 					if (parent != NULL && currentThread->GetStatus() != ZOMBIE) { // I have parent
+						// printf("I have a parent\n");
 						currentProcess->SetReturnValue(machine->ReadRegister(4));
-						if (parentThread->GetStatus() == BLOCKED) {
-							parentThread->Signal();
-						}
+						if (parentThread->GetStatus() == JOINING) {
+							//printf("my(%d) parent(%d) is waiting for me\n", currentThread->GetId(), parentThread->GetId());
+							parentThread->joinSem->V();
+						 } else {
+							// printf("my(%d) parent(%d) is not blocked(%d)\n", currentThread->GetId(), parentThread->GetId(), parentThread->GetStatus());
+						 }
+
 					}
 
+					// printf("gonna check for children\n");
 					if (!currentProcess->GetChildren()->IsEmpty()) {
+						// printf("I have children\n");
 						currentProcess->GetChildren()->Mapcar(Process::SetZombie);
 					}
-
-
 
 					Process::GetProcMap()->erase(currentThread->GetId());
 
 					delete currentProcess;
 					delete currentThread->space;
 					currentThread->space = NULL;
-					printf("SC_EXIT: currentThread is: %s\n", currentThread->getName());
+					DEBUG('s', "SC_EXIT: currentThread is: %s\n", currentThread->getName());
 					currentThread->Finish();
 					machine->WriteRegister(2, 0);
 					break;
@@ -174,29 +182,63 @@ void ExceptionHandler(ExceptionType which) {
 						i++;
 					} while (c != '\0');
 
-					printf("Call to Syscall Exec (SC_Exec).\n");
+					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
 					int ret = exec(buf);
-					printf("ret: %d\n", ret);
+					// printf("ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
 					break;
 				}
 
 			case SC_Join:
 				{
-					printf("Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
-					printf("join(spaceid = %d)\n", machine->ReadRegister(4));
+					DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
+					scheduler->Print();
+					DEBUG('j', "join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
+					int retVal;
+
+					IntStatus oldLevel = interrupt->SetLevel(IntOff);
+					Process* target;
+					Thread* targetParent;
+					// target process is in procmap
+	
 					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
-						// this process
+						// printf("JOIN - found pid in procmap!\n");
+						target = Process::GetProcMap()->at(pid);
+						targetParent = target->GetParent()->GetThread();
+						// targets parent is us
+						if (targetParent->GetId() == currentThread->GetId()) {
+							// printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
+									// targetParent->GetId(), currentThread->GetId());
+							if (target->GetThread()->GetId() != FINISHED) {
+								// printf("JOIN - target is not finished, waiting\n");
+								currentThread->setStatus(JOINING);
+								currentThread->WaitOnReturn();
+							}
+							// printf("JOIN - target is done, getting return value\n");
+							retVal = target->GetReturnValue();
+						} else {
+							// printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
+									// targetParent->GetId(), currentThread->GetId());
+							retVal = -1;
+						}
+					} else {
+						// printf("JOIN - did not find pid in procmap\n");
+						retVal = -1;
 					}
+					interrupt->SetLevel(oldLevel);
+					// printf("JOIN - retVal: %d\n", retVal);
+					machine->WriteRegister(2, retVal);
 					break;
 				}
 
 			case SC_Create:
 				{
-					printf("Call to Syscall Create (SC_Create).\n");
-					addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
-					//printf("the address is %d\n", addr);
+					DEBUG('s', "Call to Syscall Create (SC_Create).\n");
+					// char* filename arg, we need to read this buf
+
+					addr =  machine->ReadRegister(4);
+					// printf("the address is %d\n", addr);
 					bzero( buf, BUFFER_SIZE);
 					i=0;
 					c='1';
@@ -296,98 +338,97 @@ void ExceptionHandler(ExceptionType which) {
 							  break;
 						  }
 
-			case SC_Write: {
+			case SC_Write:
+						  {
+							  char * addr = (char *) machine->ReadRegister(4);
+							  int size = (int) machine->ReadRegister(5);
+							  const int mapped_id = (int) machine->ReadRegister(6);
 
-							   char * addr = (char *) machine->ReadRegister(4);
-							   int size = (int) machine->ReadRegister(5);
-							   const int mapped_id = (int) machine->ReadRegister(6);
+							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
 
-							   //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
-
-							   int wrote = 0;
-							   int value;
-							   char buff;
-							   bool read;
-								int bytes_written = 1;
-							   //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
-							   if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
-							   {
-								   OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								   //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
-								   while( wrote < size && buff != EOF && bytes_written > 0 )
-								   {
-									   //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
-									   read = machine->ReadMem((int) (addr + wrote), 1, &value);
-									   buff = value;
-									   //printf( "addr %d size %d mapped_id %d 261\n", addr, size, mapped_id);
-									   //printf("%c", buff);
-									   if ( mapped_id == ConsoleOutput )
-									   {
-										   WriteFile( ConsoleOutput, &buff, 1 );
-									   }
-									   else if ( mapped_id != ConsoleInput )
-									   {
-										   bytes_written = fileId->Write(&buff, 1);
-									   }
-									   else
-									   {
-										   //printf("mapped_id %d consoleinput %d\n", mapped_id, ConsoleInput);
-										   break;
-									   }
-									   wrote++;
-								   }
-							   }
-							   else
-							   {
-								   //TODO: we never write anything because the file isnt open, handle this?
-								   printf( "Error writing file %d\n", mapped_id );
-							   }
-							   // printf("\nWrote %d bytes\n", wrote);
-							   /*
-								  while (wrote < size && buf != EOF) {
-								  read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);
-								  WriteFile(fileid, &buf, 1);
-								  wrote++;
+							  int wrote = 0;
+							  int value;
+							  char buff;
+							  bool read;
+							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
+							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
+							  {
+								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+								  //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
+								  while( wrote < size && buff != EOF )
+								  {
+									  //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
+									  read = machine->ReadMem((int) (addr + wrote), 1, &value);
+									  buff = value;
+									  //printf( "addr %d size %d mapped_id %d 261\n", addr, size, mapped_id);
+									  //printf("%c", buff);
+									  if ( mapped_id == ConsoleOutput )
+									  {
+										  WriteFile( ConsoleOutput, &buff, 1 );
+									  }
+									  else if ( mapped_id != ConsoleInput )
+									  {
+										  fileId->Write(&buff, 1);
+									  }
+									  else
+									  {
+										  //printf("mapped_id %d consoleinput %d\n", mapped_id, ConsoleInput);
+										  break;
+									  }
+									  wrote++;
 								  }
-								  */
+							  }
+							  else
+							  {
+								  //TODO: we never write anything because the file isnt open, handle this?
+								  printf( "Error writing file %d\n", mapped_id );
+							  }
+							  // printf("\nWrote %d bytes\n", wrote);
+							  /*
+								 while (wrote < size && buf != EOF) {
+								 read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);
+								 WriteFile(fileid, &buf, 1);
+								 wrote++;
+								 }
+								 */
 
-							   machine->WriteRegister(2, wrote);
+							  machine->WriteRegister(2, wrote);
 
-							   break;
-						   }
+							  break;
+						  }
 
 			case SC_Close:
-						   {
-							   printf("Call to Syscall Close (SC_Close).\n");
-							   int mapped_id = (int) machine->ReadRegister(4);
-							   if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( )
-									   && ( mapped_id != 0 || mapped_id != 1 ) )
-							   {
-								   OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								   currentThread->fileHandlers->erase( mapped_id );
-								   delete fileId;
-							   }
-							   else
-							   {
-								   //TODO: we are trying to close a file handler that doesnt exist?
-								   printf( "Error closing file %d\n", mapped_id );
-							   }
-						   }
-						   break;
+						  {
+							  printf("Call to Syscall Close (SC_Close).\n");
+							  int mapped_id = (int) machine->ReadRegister(4);
+							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( )
+									  && ( mapped_id != 0 || mapped_id != 1 ) )
+							  {
+								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+								  currentThread->fileHandlers->erase( mapped_id );
+								  delete fileId;
+							  }
+							  else
+							  {
+								  //TODO: we are trying to close a file handler that doesnt exist?
+								  printf( "Error closing file %d\n", mapped_id );
+							  }
+						  }
+						  break;
 
 			case SC_Fork:
-						   printf("Call to Syscall Fork (SC_Fork).\n");
-						   printf("fork(%d)\n", machine->ReadRegister(4));
-						   break;
+						  printf("Call to Syscall Fork (SC_Fork).\n");
+						  printf("fork(%d)\n", machine->ReadRegister(4));
+						  break;
 
 			case SC_Yield:
-						   printf("Call to Syscall Yield (SC_Yield).\n");
-						   break;
+						  printf("Call to Syscall Yield (SC_Yield).\n");
+						  break;
 
 			default:
-						   printf("Unexpected user mode exception %d %d\n", which, type);
-						   ASSERT(FALSE);
-						   break;
+						  printf("Unexpected user mode exception %d %d\n", which, type);
+						  ASSERT(FALSE);
+						  break;
 		}
 	}
 

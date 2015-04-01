@@ -56,11 +56,11 @@
 
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
-#define StackSize	(4 * 1024)	// in words
+#define StackSize	(4 * 1024) * 2	// in words
 
 
 // Thread state
-enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED, ZOMBIE };
+enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED, ZOMBIE, FINISHED, JOINING };
 
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);
@@ -87,7 +87,6 @@ class Thread {
 	int threadPriority;
 	int id;
 	static int nextId;
-	Semaphore* joinSem;
 #endif
 
   public:
@@ -118,7 +117,7 @@ class Thread {
 	int getPriority();
 	void setPriority(int priority);
 	int GetId();
-	void Signal();
+	void WaitOnReturn();
 #endif
 
   private:
@@ -132,6 +131,7 @@ class Thread {
     void StackAllocate(VoidFunctionPtr func, int arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()
+	bool waitOnReturn;
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers --
@@ -141,6 +141,7 @@ class Thread {
     int userRegisters[NumTotalRegs];	// user-level CPU register state
 
   public:
+	Semaphore* joinSem;
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 	ThreadStatus GetStatus();

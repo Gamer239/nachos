@@ -50,8 +50,9 @@ Thread::Thread(char* threadName, int priority) {
 #ifdef USER_PROGRAM
 	char sem_name[128];
 	snprintf(sem_name, 128, "JoinSem for Thread[%s]", name);
-	joinSem = new Semaphore(sem_name, 1);
+	joinSem = new Semaphore(sem_name, 0);
     space = NULL;
+	waitOnReturn = false;
 		#ifdef CHANGED
 			fileHandlers = new std::map<int, OpenFile*>();
 			fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleInput, (OpenFile*) ConsoleInput) );
@@ -243,10 +244,11 @@ Thread::Sleep ()
 
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
 
+	ThreadStatus oldStatus = status;
     status = BLOCKED;
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
 	interrupt->Idle();	// no one to run, wait for an interrupt
-
+	status = oldStatus;
     scheduler->Run(nextThread); // returns when we've been signalled
 }
 
@@ -368,7 +370,8 @@ ThreadStatus Thread::GetStatus() {
 	return status;
 }
 
-void Thread::Signal() {
-	joinSem->V();
+void Thread::WaitOnReturn() {
+	printf("[%s] About to P on dis sem\n", name);
+	joinSem->P();
 }
 #endif

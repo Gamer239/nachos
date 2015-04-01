@@ -42,9 +42,14 @@ Thread * Process::GetThread() {
 }
 
 void Process::SetZombie(int arg) {
-	((Thread *) arg)->setStatus(ZOMBIE);
+	((Process *) arg)->GetThread()->setStatus(ZOMBIE);
+	((Process *) arg)->SetParent(NULL);
 }
 
 void Process::SetReturnValue(int val) {
 	returnVal = val;
+}
+
+int Process::GetReturnValue() {
+	return returnVal;
 }
