@@ -5,6 +5,7 @@
 
 void ReadString(int addr, char* buf) {
 	char c;
+	buf[0] = '\0';
 	do {
 		machine->ReadMem(addr++, 1, (int*) &c);
 		sprintf(buf + strlen(buf), "%c", c);

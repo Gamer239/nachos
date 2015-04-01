@@ -26,8 +26,8 @@
 #include "syscall.h"
 #include "process.h"
 #include "thread.h"
-
-
+#include "exception_impl.h"
+#include "exception_utils.h"
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -51,77 +51,15 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-void startProcess(int n) {
-	currentThread->space->RestoreState();
-	currentThread->space->InitRegisters();
-	// currentThread->space->LoadArguments();
-	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
-	machine->Run();
-	ASSERT(false);
-}
-
-SpaceId exec(char *filename, int argc, int argv) {
-	OpenFile *executable = fileSystem->Open(filename);
-	AddrSpace *space;
-
-	if (executable == NULL) {
-		printf("SC_Exec Error: Unable to open file %s\n", filename);
-		return -1;
-	}
-
-	(void) interrupt->SetLevel(IntOff);
-	Thread *thread = new Thread(filename, 0);
-	space = new AddrSpace(executable);
-	int parentId = currentThread->GetId();
-
-	Process *child = new Process(thread, thread->GetId());
-	Process *parent;
-
-	// in case our parent thread somehow was not put into the procmap
-	if (Process::GetProcMap()->find(parentId) != Process::GetProcMap()->end()) {
-		parent = Process::GetProcMap()->at(parentId);
-		printf("EXEC[%s]: Parent of %s is %s\n", currentThread->getName(), thread->getName(), parent->GetThread()->getName());
-	} else {
-		printf("EXEC[%s]: we didn't find ourself in the procmap\n", currentThread->getName());
-		parent = new Process(currentThread, parentId);
-	}
-
-	child->SetParent(parent);
-	parent->AddChild(child);
-
-	Process::GetProcMap()->insert(std::pair<int, Process*>(parentId, parent));
-	Process::GetProcMap()->insert(std::pair<int, Process*>(thread->GetId(), child));
-	// printf("inserted pid %d into procmap\n", thread->GetId());
-	delete executable;
-
-	// check if the returned address space failed to allocate
-	// the number of pages we needed
-	if (space->GetFull()) {
-		printf("Error: Exec: Insufficient memory to start process\n");
-		delete space;
-		return -1;
-	}
-	
-	// space->SetArguments(argc, (char**) argv, filename);
-
-	thread->space = space;
-	// assign the new space to the thread
-	// put the thread on the ready queue?
-
-	thread->Fork(startProcess, 0);
-
-	return child->GetThread()->GetId();
-
-}
-
 #define BUFFER_SIZE 256
 
 void ExceptionHandler(ExceptionType which) {
+	IntStatus oldLevel = interrupt->SetLevel(IntOff); // yolo
 	int type = machine->ReadRegister(2);
 
 	char c, buf[BUFFER_SIZE], filename[BUFFER_SIZE];
 	bzero(buf, BUFFER_SIZE);
-	int addr, i = 0;
+	int addr, argc, argv, ret, i = 0;
 
 	if (which == SyscallException) {
 		switch (type) {
@@ -133,187 +71,76 @@ void ExceptionHandler(ExceptionType which) {
 			case SC_Exit:
 				{
 					DEBUG('s', "Call to Syscall Exit (SC_Exit).\n");
-					// I don't think we need to care about the value passed to use
-					// by the user program's Exit call.
-
-					IntStatus oldLevel = interrupt->SetLevel(IntOff);
-					Process * currentProcess;
-					if (Process::GetProcMap()->find(currentThread->GetId()) !=
-							Process::GetProcMap()->end()) {
-						// printf("current process found in procmap\n");
-						currentProcess = Process::GetProcMap()->at(currentThread->GetId());
-					} else {
-						ASSERT(false); // should never happen
-					}
-
-					Process * parent = currentProcess->GetParent();
-					Thread * parentThread = parent->GetThread();
-					if (parent != NULL && currentThread->GetStatus() != ZOMBIE) { // I have parent
-						// printf("I have a parent\n");
-						currentProcess->SetReturnValue(machine->ReadRegister(4));
-						if (parentThread->GetStatus() == JOINING) {
-							// printf("my(%d) parent(%d) is waiting for me\n", currentThread->GetId(), parentThread->GetId());
-							parentThread->joinSem->V();
-						 } else {
-							// printf("my(%d) parent(%d) is not blocked(%d)\n", currentThread->GetId(), parentThread->GetId(), parentThread->GetStatus());
-						 }
-
-					} else {
-						Process::GetProcMap()->erase(currentThread->GetId());
-					}
-
-					// printf("gonna check for children\n");
-					if (!currentProcess->GetChildren()->IsEmpty()) {
-						// printf("I have children\n");
-						currentProcess->GetChildren()->Mapcar(Process::SetZombie);
-					}
-
-					
-					// Process::GetProcMap()->erase(currentThread->GetId());
-					currentProcess->SetFinished(true);
-
-					// delete currentProcess;
-					delete currentThread->space;
-					currentThread->space = NULL;
-					DEBUG('s', "SC_EXIT: currentThread is: %s\n", currentThread->getName());
-					interrupt->SetLevel(oldLevel);
-					currentThread->Finish();
-					machine->WriteRegister(2, 0);
+					exit(machine->ReadRegister(4));
 					break;
 				}
 			case SC_Exec:
 				{
 					addr = machine->ReadRegister(4);
-					do {
-						machine->ReadMem(addr + i, 1, (int *) &c);
-						sprintf(buf + strlen(buf), "%c", c);
-						i++;
-					} while (c != '\0');
-
+					ReadString(addr, filename);
 					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
-
-					interrupt->SetLevel(IntOff);
-					int ret = exec(buf, machine->ReadRegister(5), machine->ReadRegister(6));
+					argc = machine->ReadRegister(5);
+					argv = machine->ReadRegister(6);
+					ret = exec(filename, argc, argv);
 					printf("EXEC ret: %d\n", ret);
 					machine->WriteRegister(2, ret);
-					interrupt->Enable();
 					break;
 				}
 
 			case SC_Join:
 				{
 					DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
-					// scheduler->Print();
-					printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 					int pid = machine->ReadRegister(4);
-					int retVal;
-
-					IntStatus oldLevel = interrupt->SetLevel(IntOff);
-					Process* target;
-					Thread* targetParent;
-					// target process is in procmap
-
-					/*
-					for(std::map<int, Process*>::const_iterator it = Process::GetProcMap()->begin();
-							it !=Process::GetProcMap()->end(); ++it)
-					{
-						printf("key: %d, thread: %s\n", it->first, it->second->GetThread()->getName());
-					}
-
-					*/
-					if (Process::GetProcMap()->find(pid) != Process::GetProcMap()->end()) {
-						//printf("JOIN - found pid(%d) in procmap!\n", pid);
-						target = Process::GetProcMap()->at(pid);
-						targetParent = target->GetParent()->GetThread();
-						// targets parent is us
-						if (targetParent->GetId() == currentThread->GetId()) {
-							// printf("JOIN - target(%d)s parent(%d) is us(%d)\n", pid,
-								// targetParent->GetId(), currentThread->GetId());
-							if (!target->GetFinished()) {
-								//printf("JOIN - target is not finished, waiting\n");
-								currentThread->setStatus(JOINING);
-								currentThread->WaitOnReturn();
-							}
-							//printf("JOIN - target is done, getting return value\n");
-							retVal = target->GetReturnValue();
-							Process::GetProcMap()->erase(pid);
-						} else {
-							//printf("JOIN - target(%d)s parent(%d) is not us(%d)\n", pid,
-								// targetParent->GetId(), currentThread->GetId());
-							retVal = -1;
-						}
+					if (pid > 0) {
+						ret = join(pid);
 					} else {
-						//printf("JOIN - did not find pid %d in procmap\n", pid);
-						retVal = -1;
+						ret = -1;
 					}
-					printf("JOIN - retVal: %d\n", retVal);
-					machine->WriteRegister(2, retVal);
-					interrupt->SetLevel(oldLevel);
+					printf("JOIN - retVal: %d\n", ret);
+					machine->WriteRegister(2, ret);
 					break;
 				}
 
 			case SC_Create:
 				{
 					DEBUG('s', "Call to Syscall Create (SC_Create).\n");
-					// char* filename arg, we need to read this buf
-
-					addr =  machine->ReadRegister(4);
-					// printf("the address is %d\n", addr);
-					bzero( buf, BUFFER_SIZE);
-					i=0;
-					c='1';
-					while (c != '\0' && i < BUFFER_SIZE) {
-						machine->ReadMem(addr + i, 1, (int *) &c);
-						//sprintf(buf + strlen(buf), "%c", c);
-						printf("%c", c);
-						buf[i]=c;
-						i++;
-					}
-
-					// printf("total i's %d\n", i);
-
-					//TODO: remove this line below
-					// printf("\ncreating file %s|\n", buf);
-
-					// a file size of zero is fine for now
-					// we'll add data once we open it
-					fileSystem->Create(buf, 0);
-
+					create((char *)machine->ReadRegister(4));
 					// no return value for Create
 					break;
 				}
 
-			case SC_Open: {
-							  DEBUG('s', "Call to Syscall Open (SC_Open).\n");
-							  addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
-							  c = '1';
-							  i = 0;
-							  while (c != '\0' && i < BUFFER_SIZE) {
-								  machine->ReadMem(addr + i, 1, (int *) &c);
-								  //sprintf(buf + strlen(buf), "%c", c);
-								  buf[i]=c;
-								  i++;
-							  }
+			case SC_Open: 
+				{
+					DEBUG('s', "Call to Syscall Open (SC_Open).\n");
+					addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+					c = '1';
+					i = 0;
+					while (c != '\0' && i < BUFFER_SIZE) {
+						machine->ReadMem(addr + i, 1, (int *) &c);
+						//sprintf(buf + strlen(buf), "%c", c);
+						buf[i]=c;
+						i++;
+					}
 
-							  OpenFile* fileId = fileSystem->Open(buf);
-							  //find the first available key
-							  int mapped_id = 0;
-							  while( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) && fileId != NULL )
-							  {
-								  mapped_id++;
-							  }
-							  if ( fileId != NULL )
-							  {
-								  currentThread->fileHandlers->insert( std::pair<int, OpenFile*>( mapped_id, fileId ) );
-							  }
-							  else
-							  {
-								  mapped_id = -1;
-							  }
-							  // printf("open id is %d\n", mapped_id);
-							  machine->WriteRegister(2, mapped_id);
-							  break;
-						  }
+					OpenFile* fileId = fileSystem->Open(buf);
+					//find the first available key
+					int mapped_id = 0;
+					while( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) && fileId != NULL )
+					{
+						mapped_id++;
+					}
+					if ( fileId != NULL )
+					{
+						currentThread->fileHandlers->insert( std::pair<int, OpenFile*>( mapped_id, fileId ) );
+					}
+					else
+					{
+						mapped_id = -1;
+					}
+					// printf("open id is %d\n", mapped_id);
+					machine->WriteRegister(2, mapped_id);
+					break;
+				}
 
 			case SC_Read: {
 							  addr = machine->ReadRegister(4);
@@ -323,7 +150,7 @@ void ExceptionHandler(ExceptionType which) {
 							  int read = 0;
 							  char buff;
 							  bool write;
-								int read_count = 1;
+							  int read_count = 1;
 							  //check to make sure that our file handler exists
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
@@ -370,7 +197,7 @@ void ExceptionHandler(ExceptionType which) {
 							  int value;
 							  char buff;
 							  bool read;
-								int write_count = 1;
+							  int write_count = 1;
 							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
@@ -439,7 +266,6 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Fork:
 						  DEBUG('s', "Call to Syscall Fork (SC_Fork).\n");
-						  // printf("fork(%d)\n", machine->ReadRegister(4));
 						  break;
 
 			case SC_Yield:
@@ -457,4 +283,5 @@ void ExceptionHandler(ExceptionType which) {
 	machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
 	machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 
+	interrupt->SetLevel(oldLevel);
 }
