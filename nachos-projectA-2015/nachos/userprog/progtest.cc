@@ -49,7 +49,7 @@ StartProcess(char *filename)
 					// by doing the syscall "exit"
 */
 	char* argv[1];
-	argv[0] = "\0";
+	argv[0] = "yolo";
 	exec(filename, 1, (int) argv);
 }
 

@@ -11,19 +11,26 @@
  */
 
 #include "syscall.h"
+#include "sys_libs.c"
 
 int
-main()
+main(int argc, char *argv[])
 {
-	char * testString = "testing hello\n";
-	Write(testString, 14, ConsoleOutput);
+	// char * testString = "testing hello\n";
+	// Write(testString, 14, ConsoleOutput);
+	Write("argc: ", 6, ConsoleOutput);
+	Write(itoa(argc), strlen(itoa(argc)), ConsoleOutput);
+	Write("\n", 1, ConsoleOutput);
+	Write("should be yolo: ", strlen("should be yolo: "), ConsoleOutput); 
+	Write(argv[0], strlen(argv[0]), ConsoleOutput);
+	Write("\n", 1, ConsoleOutput);
 	int i = 0;
 	// while (i < 150) {
 	//	if (i % 10 == 0) {
-			Write("working\n", 8, ConsoleOutput);
+	Write("working\n", 8, ConsoleOutput);
 	//	}
 	//	i++;
 	//}
-    Exit(15);
+    Exit(99);
     /* not reached */
 }

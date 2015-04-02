@@ -8,7 +8,7 @@
 void startProcess(int n) {
 	currentThread->space->RestoreState();
 	currentThread->space->InitRegisters();
-	// currentThread->space->LoadArguments();
+	currentThread->space->LoadArguments();
 	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
 	ASSERT(false);
@@ -60,6 +60,12 @@ SpaceId exec(char *filename, int argc, int argv) {
 
 	std::map<int, Process*>* procMap = Process::GetProcMap(); 
 
+	printf("Call to exec with argc: %d and argv:\n", argc);
+
+	for (int i = 0; i < argc; i++) {
+		printf("argv[%d]: %s\n", i, ((char**) argv)[i]);
+	}
+
 	if (executable == NULL) {
 		printf("SC_Exec Error: Unable to open file %s\n", filename);
 		return -1;
@@ -97,7 +103,9 @@ SpaceId exec(char *filename, int argc, int argv) {
 		return -1;
 	}
 
-	// space->SetArguments(argc, (char**) argv, filename);
+	printf("right before set arguments\n");
+	space->SetArguments(argc, (char**) argv, filename);
+	printf("right after\n");
 
 	thread->space = space;
 	// assign the new space to the thread

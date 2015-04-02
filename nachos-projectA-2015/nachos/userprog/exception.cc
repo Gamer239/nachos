@@ -58,6 +58,9 @@ void ExceptionHandler(ExceptionType which) {
 	IntStatus oldLevel = interrupt->SetLevel(IntOff); // yolo
 	int type = machine->ReadRegister(2);
 
+
+	printf("were in here? which: %d\n", which);
+
 	char c, buf[BUFFER_SIZE], filename[BUFFER_SIZE];
 	bzero(buf, BUFFER_SIZE);
 	int addr, argc, argv, ret, i = 0;
@@ -78,6 +81,7 @@ void ExceptionHandler(ExceptionType which) {
 			case SC_Exec:
 				{
 					addr = machine->ReadRegister(4);
+					printf("in exec about to readstring\n");
 					ReadString(addr, filename);
 					DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
 					argc = machine->ReadRegister(5);
@@ -188,6 +192,7 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Write:
 						  {
+							  printf("in Write\n");
 							  char * addr = (char *) machine->ReadRegister(4);
 							  int size = (int) machine->ReadRegister(5);
 							  const int mapped_id = (int) machine->ReadRegister(6);

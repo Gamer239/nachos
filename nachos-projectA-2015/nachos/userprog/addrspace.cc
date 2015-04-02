@@ -83,7 +83,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	memFull = false;
 	pageMap = PageMap::GetInstance();
 	if (numPages > (unsigned int) pageMap->NumClear()) {
-		printf("numPages(%d) > pageMap-NumClear()(%d)", numPages, pageMap->NumClear());
+		// printf("numPages(%d) > pageMap-NumClear()(%d)", numPages, pageMap->NumClear());
 		memFull = true;
 	}		// check we're not trying
 	// to run anything too big --
@@ -102,7 +102,9 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	printf("\n");
 	*/
 	// first, set up the translation
+	printf("setting addrspace pageTable\n");
 	pageTable = new TranslationEntry[numPages];
+	if (machine->pageTable == NULL) machine->pageTable = pageTable;
 	if (!memFull) {
 		for (i = 0; i < numPages; i++) {
 			pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
@@ -120,6 +122,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
 			pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
 			// a separate page, we could set its
 			// pages to be read-only
+		}
+
+		for (i = 0; i < numPages; i++) {
+
 		}
 	}
 
@@ -234,6 +240,7 @@ void AddrSpace::SaveState()
 #ifdef CHANGED
 void AddrSpace::RestoreState()
 {
+	printf("setting machine's page table\n");
 	machine->pageTable = pageTable;
 	machine->pageTableSize = numPages;
 }
@@ -252,20 +259,26 @@ bool AddrSpace::GetFull() {
  * we load them into their correct places in memory in AddrSpace::LoadArguments.
  */
 void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
+
 	char temp[128];
-	this->argc = argc;
+	this->argc = argc + 1;
 	this->argv = new char*[argc];
 
 	this->argv[0] = new char[strlen(filename) + 1];
 	strcpy(this->argv[0], filename);
 
+	printf("set arguments, argc: %d\n", argc);
+	printf("copied filename: %s\n", this->argv[0]);
+
 	for (int i = 0; i < argc; i++) {
+		printf("argv[i]: %s\n", argv[i]);
 		int arg_ptr;
 		bzero(temp, 128);
-		machine->ReadMem((int) argv + 4 * i, 4, &arg_ptr);
+		UserTranslate::ReadMem((int) argv + 4 * i, 4, &arg_ptr);
 		ReadString(arg_ptr, temp);
 		this->argv[i + 1] = new char[strlen(temp) + 1];
 		strcpy(this->argv[i + 1], temp);
+		printf("got argument %d: %s\n", i, temp);
 	}
 
 }
@@ -299,8 +312,8 @@ void AddrSpace::LoadArguments(){
 	sp = sp - argc * 4;
 	sp = sp - sp % 4;
 	machine->WriteRegister(StackReg, sp - 16);
-	machine->WriteRegister(4,argc);
-	machine->WriteRegister(5,sp);
+	machine->WriteRegister(4, argc);
+	machine->WriteRegister(5, sp);
 
 	for (int i = 0; i < argc; i++) {
 		machine->WriteMem(sp, 4, args[i]);
