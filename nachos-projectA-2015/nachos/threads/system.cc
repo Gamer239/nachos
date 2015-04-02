@@ -18,8 +18,9 @@ Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
-
+#ifdef CHANGED
 #define SLICE 20
+#endif
 
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
@@ -62,6 +63,7 @@ extern void Cleanup();
 //	"dummy" is because every interrupt handler takes one argument,
 //		whether it needs it or not.
 //----------------------------------------------------------------------
+#ifdef CHANGED
 static void
 TimerInterruptHandler(int dummy)
 {
@@ -72,6 +74,7 @@ TimerInterruptHandler(int dummy)
 
 static int quant = 0;
 
+//TODO: add comment block
 static void TimeSlicingHandler(int dummy) {
 
 	if (++quant % SLICE == 0) {
@@ -81,6 +84,7 @@ static void TimeSlicingHandler(int dummy) {
 	}
 
 }
+#endif
 //----------------------------------------------------------------------
 // Initialize
 // 	Initialize Nachos global data structures.  Interpret command
@@ -151,11 +155,13 @@ Initialize(int argc, char **argv)
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
 
+	#ifdef CHANGED
 	if (randomYield) {				// start the timer (if needed)
 		timer = new Timer(TimerInterruptHandler, 0, randomYield);
 	} else {
 		timer = new Timer(TimeSlicingHandler, 0, false);
 	}
+	#endif
 
     threadToBeDestroyed = NULL;
 

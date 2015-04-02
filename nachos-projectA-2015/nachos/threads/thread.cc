@@ -22,8 +22,9 @@
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
 					// execution stack, for detecting
 					// stack overflows
-
+#ifdef CHANGED
 int Thread::nextId = 0;
+#endif
 
 //----------------------------------------------------------------------
 // Thread::Thread
@@ -42,6 +43,7 @@ Thread::Thread(char* threadName)
 }
 
 Thread::Thread(char* threadName, int priority) {
+	#ifdef CHANGED
 	id = Thread::nextId++;
 	strcpy(name, threadName);
 	stackTop = NULL;
@@ -53,14 +55,13 @@ Thread::Thread(char* threadName, int priority) {
 	joinSem = new Semaphore(sem_name, 0);
     space = NULL;
 	waitOnReturn = false;
-		#ifdef CHANGED
-			fileHandlers = new std::map<int, OpenFile*>();
-			fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleInput, (OpenFile*) ConsoleInput) );
-			fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleOutput, (OpenFile*) ConsoleOutput) );
-		#endif
+	fileHandlers = new std::map<int, OpenFile*>();
+	fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleInput, (OpenFile*) ConsoleInput) );
+	fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleOutput, (OpenFile*) ConsoleOutput) );
 #endif
 	threadPriority = priority;
 	printf("Created Thread [%s] (%d)\n", name, id);
+	#endif
 }
 #endif
 
@@ -88,7 +89,9 @@ Thread::~Thread()
 			delete fileHandlers;
 		#endif
 	#endif
+	#ifdef CHANGED
 	delete joinSem;
+	#endif
 }
 
 //----------------------------------------------------------------------
@@ -245,11 +248,13 @@ Thread::Sleep ()
 
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
 
+	#ifdef CHANGED
 	ThreadStatus oldStatus = status;
     status = BLOCKED;
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
 	interrupt->Idle();	// no one to run, wait for an interrupt
 	status = oldStatus;
+	#endif
     scheduler->Run(nextThread); // returns when we've been signalled
 }
 

@@ -39,13 +39,17 @@
 
 #include "copyright.h"
 #include "utility.h"
+#ifdef CHANGED
 #include "synch.h"
+#endif
 
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+#ifdef CHANGED
 #include <map>
 #include "syscall.h"
+#endif
 #endif
 
 // CPU register state to be saved on context switch.
@@ -56,11 +60,15 @@
 
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
+#ifdef CHANGED
 #define StackSize	(4 * 1024) * 2	// in words
+#endif
 
 
 // Thread state
+#ifdef CHANGED
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED, ZOMBIE, FINISHED, JOINING };
+#endif
 
 // external function, dummy routine whose sole job is to call Thread::Print
 extern void ThreadPrint(int arg);
@@ -75,7 +83,9 @@ extern void ThreadPrint(int arg);
 //
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
+#ifdef CHANGED
 class Semaphore;
+#endif
 
 class Thread {
   private:
@@ -112,7 +122,9 @@ class Thread {
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
+    #ifdef CHANGED
     void Print() { printf("Thread: %s, ", name); }
+    #endif
 #ifdef CHANGED
 	int getPriority();
 	void setPriority(int priority);
@@ -126,12 +138,16 @@ class Thread {
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
     ThreadStatus status;		// ready, running or blocked
+    #ifdef CHANGED
 	char name[64];
+  #endif
 
     void StackAllocate(VoidFunctionPtr func, int arg);
     					// Allocate a stack for thread.
 					// Used internally by Fork()
+  #ifdef CHANGED
 	bool waitOnReturn;
+  #endif
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers --
@@ -141,10 +157,14 @@ class Thread {
     int userRegisters[NumTotalRegs];	// user-level CPU register state
 
   public:
+    #ifdef CHANGED
 	Semaphore* joinSem;
+  #endif
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
+    #ifdef CHANGED
 	ThreadStatus GetStatus();
+  #endif
 
     AddrSpace *space;			// User code this thread is running.
     #ifdef CHANGED

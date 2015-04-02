@@ -1,4 +1,4 @@
-// scheduler.cc 
+// scheduler.cc
 //	Routines to choose the next thread to run, and to dispatch to
 //	that thread.
 //
@@ -7,15 +7,15 @@
 //	(since we are on a uniprocessor).
 //
 // 	NOTE: We can't use Locks to provide mutual exclusion here, since
-// 	if we needed to wait for a lock, and the lock was busy, we would 
-//	end up calling FindNextToRun(), and that would put us in an 
+// 	if we needed to wait for a lock, and the lock was busy, we would
+//	end up calling FindNextToRun(), and that would put us in an
 //	infinite loop.
 //
 // 	Very simple implementation -- no priorities, straight FIFO.
 //	Might need to be improved in later assignments.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
@@ -28,9 +28,9 @@
 //----------------------------------------------------------------------
 
 Scheduler::Scheduler()
-{ 
-    readyList = new List; 
-} 
+{
+    readyList = new List;
+}
 
 //----------------------------------------------------------------------
 // Scheduler::~Scheduler
@@ -38,9 +38,9 @@ Scheduler::Scheduler()
 //----------------------------------------------------------------------
 
 Scheduler::~Scheduler()
-{ 
-    delete readyList; 
-} 
+{
+    delete readyList;
+}
 
 //----------------------------------------------------------------------
 // Scheduler::ReadyToRun
@@ -58,7 +58,9 @@ Scheduler::ReadyToRun (Thread *thread)
     thread->setStatus(READY);
 #ifdef CHANGED
 	readyList->SortedInsert((void *)thread, thread->getPriority());
+  #ifdef CHANGED
 	// scheduler->Print();
+  #endif
 #endif
 }
 
@@ -94,37 +96,41 @@ void
 Scheduler::Run (Thread *nextThread)
 {
     Thread *oldThread = currentThread;
-    
-#ifdef USER_PROGRAM			// ignore until running user programs 
+
+#ifdef USER_PROGRAM			// ignore until running user programs
     if (currentThread->space != NULL) {	// if this thread is a user program,
         currentThread->SaveUserState(); // save the user's CPU registers
 	currentThread->space->SaveState();
     }
 #endif
-    
+
     oldThread->CheckOverflow();		    // check if the old thread
 					    // had an undetected stack overflow
 
     currentThread = nextThread;		    // switch to the next thread
     currentThread->setStatus(RUNNING);      // nextThread is now running
-    
+
+    #ifdef CHANGED
     DEBUG('t', "Switching from thread \"%s\"(%d) to thread \"%s\"(%d)\n",
 	  oldThread->getName(), oldThread->GetId(), nextThread->getName(),
 	  nextThread->GetId());
-	// scheduler->Print();
+    // scheduler->Print();
+    #endif
 
-    // This is a machine-dependent assembly language routine defined 
+    // This is a machine-dependent assembly language routine defined
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
 
     SWITCH(oldThread, nextThread);
 
+    #ifdef CHANGED
     DEBUG('t', "\n\nNow in thread \"%s\"(%d)\n\n", currentThread->getName(),
 			currentThread->GetId());
 
-	// scheduler->Print();
-	// printf("size of readyList: %d\n", readyList->Size());
+    // scheduler->Print();
+    // printf("size of readyList: %d\n", readyList->Size());
+    #endif
     // If the old thread gave up the processor because it was finishing,
     // we need to delete its carcass.  Note we cannot delete the thread
     // before now (for example, in Thread::Finish()), because up to this
@@ -133,7 +139,7 @@ Scheduler::Run (Thread *nextThread)
         delete threadToBeDestroyed;
 	threadToBeDestroyed = NULL;
     }
-    
+
 #ifdef USER_PROGRAM
     if (currentThread->space != NULL) {		// if there is an address space
         currentThread->RestoreUserState();     // to restore, do it.
@@ -150,7 +156,11 @@ Scheduler::Run (Thread *nextThread)
 void
 Scheduler::Print()
 {
-	printf("Ready list contents: ");
-    readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
-	printf("\n");
+  #ifdef CHANGED
+  printf("Ready list contents: ");
+  #endif
+  readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
+	#ifdef CHANGED
+  printf("\n");
+  #endif
 }
