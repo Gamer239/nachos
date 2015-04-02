@@ -1,4 +1,5 @@
 #ifdef CHANGED
+//TODO: fix comments in this file
 // translate.cc
 //	Routines to translate virtual addresses to physical addresses.
 //	Software sets up a table of legal translations.  We look up

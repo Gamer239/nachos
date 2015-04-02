@@ -1,4 +1,6 @@
-// synchconsole.cc 
+#ifdef CHANGED
+//TODO: fix the comments in this file
+// synchconsole.cc
 //	Routines to simulate a serial port to a console device.
 //	A console has input (a keyboard) and output (a display).
 //	These are each simulated by operations on UNIX files.
@@ -10,7 +12,7 @@
 //  DO NOT CHANGE -- part of the machine emulation
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
@@ -18,15 +20,15 @@
 #include "system.h"
 
 // Dummy functions because C++ is weird about pointers to member functions
-static void ConsoleReadPoll(int c) 
-{ 
-	SynchConsole *console = (SynchConsole *)c; 
-	console->CheckCharAvailDone(); 
+static void ConsoleReadPoll(int c)
+{
+	SynchConsole *console = (SynchConsole *)c;
+	console->CheckCharAvailDone();
 }
 
 static void ConsoleWriteDone(int c)
-{ 
-	SynchConsole *console = (SynchConsole *)c; 
+{
+	SynchConsole *console = (SynchConsole *)c;
 	console->WriteDoneDone();
 }
 
@@ -66,8 +68,8 @@ SynchConsole::~SynchConsole()
 //
 //	Only read it in if there is buffer space for it (if the previous
 //	character has been grabbed out of the buffer by the Nachos kernel).
-//	Invoke the "read" interrupt handler, once the character has been 
-//	put into the buffer. 
+//	Invoke the "read" interrupt handler, once the character has been
+//	put into the buffer.
 //----------------------------------------------------------------------
 void
 SynchConsole::CheckCharAvailDone()
@@ -111,7 +113,7 @@ SynchConsole::GetChar()
 
 //----------------------------------------------------------------------
 // Console::PutChar()
-// 	Write a character to the simulated display, schedule an interrupt 
+// 	Write a character to the simulated display, schedule an interrupt
 //	to occur in the future, and return.
 //----------------------------------------------------------------------
 
@@ -127,3 +129,4 @@ SynchConsole::PutChar(char ch)
     //printf("release\n");
 	lock->Release();
 }
+#endif

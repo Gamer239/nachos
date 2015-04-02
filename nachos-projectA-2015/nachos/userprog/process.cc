@@ -1,7 +1,8 @@
+#ifdef CHANGED
 #include "process.h"
 
 std::map<int, Process*>* Process::procmap = NULL;
-
+//TODO: we should probably have some overarching comment at least to give some context
 Process::Process(Thread* aThread, int aid) {
 	// printf("Created new process %s(%d)\n", aThread->getName(), aid);
 	children = new List;
@@ -62,3 +63,4 @@ bool Process::GetFinished() {
 void Process::SetFinished(bool f) {
 	finished = f;
 }
+#endif

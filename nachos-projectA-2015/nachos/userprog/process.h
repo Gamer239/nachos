@@ -1,12 +1,13 @@
+#ifdef CHANGED
 #ifndef PROCESS_H
 #define PROCESS_H
 
 #include "list.h"
 #include "thread.h"
 #include <map>
-
+//TODO: we should probably have some overarching comment at least to give some context
 class Process {
-	
+
 	public:
 		Process(Thread *thread, int id);
 		~Process();
@@ -28,7 +29,7 @@ class Process {
 		void SetFinished(bool f);
 		bool GetFinished();
 
-	private: 
+	private:
 		int id;
 		Process * parent;
 		List * children;
@@ -39,4 +40,5 @@ class Process {
 
 };
 
+#endif
 #endif

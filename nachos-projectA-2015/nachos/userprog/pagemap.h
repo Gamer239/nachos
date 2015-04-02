@@ -1,3 +1,4 @@
+#ifdef CHANGED
 // pagemap.h
 //  A singleton wrapper for our bitmap class.
 //  This way, a user program's address space can just hold a pointer
@@ -22,4 +23,5 @@ class PageMap : public BitMap {
 
 };
 
+#endif
 #endif

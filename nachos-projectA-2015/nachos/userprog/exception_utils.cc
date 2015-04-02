@@ -1,3 +1,4 @@
+#ifdef CHANGED
 #include "system.h"
 #include "user_translate.h"
 #include "exception_utils.h"
@@ -20,3 +21,4 @@ void WriteString(int addr, char* buf, int size) {
 }
 
 
+#endif

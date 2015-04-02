@@ -1,3 +1,5 @@
+#ifdef CHANGED
+//TODO: fix comments in this file
 // machine.h
 //	Data structures for simulating the execution of user programs
 //	running on top of Nachos.
@@ -56,3 +58,4 @@ class UserTranslate {
 };
 
 #endif // MACHINE_H
+#endif

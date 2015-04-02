@@ -1,3 +1,4 @@
+#ifdef CHANGED
 #include "exception_impl.h"
 #include <map>
 #include "process.h"
@@ -58,7 +59,7 @@ SpaceId exec(char *filename, int argc, int argv) {
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
 
-	std::map<int, Process*>* procMap = Process::GetProcMap(); 
+	std::map<int, Process*>* procMap = Process::GetProcMap();
 
 	if (executable == NULL) {
 		printf("SC_Exec Error: Unable to open file %s\n", filename);
@@ -139,8 +140,10 @@ int join(SpaceId id) {
 
 void create(char* filename) {
 	char buf[128];
-	ReadString((int) filename, buf);  
+	ReadString((int) filename, buf);
 	// a file size of zero is fine for now
 	// we'll add data once we open it
 	fileSystem->Create(buf, 0);
 }
+
+#endif
