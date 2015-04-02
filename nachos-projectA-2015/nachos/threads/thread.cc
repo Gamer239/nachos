@@ -60,7 +60,6 @@ Thread::Thread(char* threadName, int priority) {
 	fileHandlers->insert( std::pair<int, OpenFile*>(ConsoleOutput, (OpenFile*) ConsoleOutput) );
 #endif
 	threadPriority = priority;
-	printf("Created Thread [%s] (%d)\n", name, id);
 	#endif
 }
 #endif

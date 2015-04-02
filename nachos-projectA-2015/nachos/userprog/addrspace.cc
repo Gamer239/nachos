@@ -102,7 +102,6 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	printf("\n");
 	*/
 	// first, set up the translation
-	printf("setting addrspace pageTable\n");
 	pageTable = new TranslationEntry[numPages];
 	if (machine->pageTable == NULL) machine->pageTable = pageTable;
 	if (!memFull) {
@@ -240,7 +239,6 @@ void AddrSpace::SaveState()
 #ifdef CHANGED
 void AddrSpace::RestoreState()
 {
-	printf("setting machine's page table\n");
 	machine->pageTable = pageTable;
 	machine->pageTableSize = numPages;
 }

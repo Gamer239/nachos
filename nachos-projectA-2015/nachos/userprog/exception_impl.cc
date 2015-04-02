@@ -9,7 +9,7 @@
 void startProcess(int n) {
 	currentThread->space->RestoreState();
 	currentThread->space->InitRegisters();
-	currentThread->space->LoadArguments();
+//	currentThread->space->LoadArguments();
 	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
 	ASSERT(false);
@@ -61,11 +61,11 @@ SpaceId exec(char *filename, int argc, int argv) {
 
 	std::map<int, Process*>* procMap = Process::GetProcMap();
 
-	printf("Call to exec with argc: %d and argv:\n", argc);
+	// printf("Call to exec with argc: %d and argv:\n", argc);
 
-	for (int i = 0; i < argc; i++) {
-		printf("argv[%d]: %s\n", i, ((char**) argv)[i]);
-	}
+	// for (int i = 0; i < argc; i++) {
+	//	printf("argv[%d]: %s\n", i, ((char**) argv)[i]);
+	// }
 
 	if (executable == NULL) {
 		printf("SC_Exec Error: Unable to open file %s\n", filename);
@@ -82,9 +82,7 @@ SpaceId exec(char *filename, int argc, int argv) {
 	// in case our parent thread somehow was not put into the procmap
 	if (procMap->find(parentId) != procMap->end()) {
 		parent = procMap->at(parentId);
-		printf("EXEC[%s]: Parent of %s is %s\n", currentThread->getName(), thread->getName(), parent->GetThread()->getName());
 	} else {
-		printf("EXEC[%s]: we didn't find ourself in the procmap\n", currentThread->getName());
 		parent = new Process(currentThread, parentId);
 	}
 
@@ -104,9 +102,9 @@ SpaceId exec(char *filename, int argc, int argv) {
 		return -1;
 	}
 
-	printf("right before set arguments\n");
-	space->SetArguments(argc, (char**) argv, filename);
-	printf("right after\n");
+	// printf("right before set arguments\n");
+	// space->SetArguments(argc, (char**) argv, filename);
+	// printf("right after\n");
 
 	thread->space = space;
 	// assign the new space to the thread
@@ -119,7 +117,6 @@ SpaceId exec(char *filename, int argc, int argv) {
 }
 
 int join(SpaceId id) {
-	printf("join(spaceid = %d)\n", machine->ReadRegister(4));
 	int pid = machine->ReadRegister(4);
 	int retVal;
 

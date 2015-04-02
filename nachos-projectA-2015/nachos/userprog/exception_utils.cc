@@ -9,11 +9,7 @@ void ReadString(int addr, char* buf) {
 	buf[0] = '\0';
 	int i = 0;
 	do {
-		// printf("wat before\n");
-		// printf("machine->tlb: %d\n", machine->tlb);
-		// printf("machine->pageTable: %d\n", machine->pageTable);
-		UserTranslate::ReadMem(addr + i, 1, (int*) &c);
-		// printf("wat after\n");
+		UserTranslate::ReadMem(addr++, 1, (int*) &c);
 		sprintf(buf + strlen(buf), "%c", c);
 		i++;
 	} while (c != '\0' && i < 64);
