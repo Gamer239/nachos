@@ -33,7 +33,7 @@ class AddrSpace {
 
     void SaveState();			// Save/restore address space-specific
     void RestoreState();		// info on a context switch
-    #ifdef
+    #ifdef CHANGED
 	  bool GetFull();			// so we can check if space creation failed
 	  void SetArguments(int argc, char* argv[], char* filename);
 	  void LoadArguments();
