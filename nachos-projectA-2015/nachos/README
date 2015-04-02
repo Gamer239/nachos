@@ -32,7 +32,7 @@ each write passed or failed.
 
  Exit( int status )
  - Exits the current running process, first checking if a parent process
- exists and is waiting on the current process. If a parent is waiting, 
+ exists and is waiting on the current process. If a parent is waiting,
  the parent is released, and the return value of this process is stored
  where the parent process can access it.
  -Returns nothing
@@ -62,7 +62,7 @@ each write passed or failed.
  - No changes to the scheduling algorithm have been made from the previous
  program, this means a priority based algorithm, with round-robin preemption
  is implemented. After a set number of ticks, the scheduler will yield the
- current running process and re-insert it into the queue, based on it priority. 
+ current running process and re-insert it into the queue, based on it priority.
 
  SynchConsole
  SynchConsole( char* readFile, char* writeFile )
@@ -112,4 +112,22 @@ each write passed or failed.
  - test/shell: modified shell to be more robust. Will quit when it receives "exit",
  otherwise, allows the spawning of child processes by simply typing the filename
  into the prompt.
- - test/create: tests creation of file 
+ - test/create: tests creation of file
+
+ -Read Write Test
+Purppose-To test reading and writing from a console and the file
+system and changing the buffer sizes to ensure that the system works.
+-Method:
+-----Each subtest, creates a file, writes a string to the file,
+-----closes the file, opens the file, reads the file, writes the file
+-----to the console and then closes the file.
+-The test then uses the procedure about and changes the read and
+write buffer sizes for each sub test to ensure that the system
+stops at the appropiate time and doesnt clobber other memory.
+-Procedure
+-Run
+-nachos -x test/read_write_test
+-Then check to make sure that the testString outputted 4 times.
+
+-Expected Results
+--The given testString should output to the console 4 times
