@@ -1,5 +1,6 @@
 #ifdef CHANGED
-// translate.cc
+//TODO: fix comments in this file
+// user_translate.cc
 //	Routines to translate virtual addresses to physical addresses.
 //	Software sets up a table of legal translations.  We look up
 //	in the table on every memory reference to find the true physical
@@ -23,9 +24,6 @@
 //
 //	Note that the contents of the TLB are specific to an address space.
 //	If the address space changes, so does the contents of the TLB!
-//
-// DO NOT CHANGE -- part of the machine emulation
-//
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
@@ -37,7 +35,7 @@
 #include "user_translate.h"
 
 //----------------------------------------------------------------------
-// Machine::ReadMem
+// UserTranslate::ReadMem
 //      Read "size" (1) bytes of virtual memory at "addr" into
 //	the location pointed to by "value".
 //
@@ -83,7 +81,7 @@ UserTranslate::ReadMem(int addr, int size, int *value)
 }
 
 //----------------------------------------------------------------------
-// Machine::WriteMem
+// UserTranslate::WriteMem
 //      Write "size" (1) bytes of the contents of "value" into
 //	virtual memory at location "addr".
 //
@@ -126,7 +124,7 @@ UserTranslate::WriteMem(int addr, int size, int value)
 }
 
 //----------------------------------------------------------------------
-// Machine::Translate
+// UserTranslate::Translate
 // 	Translate a virtual address into a physical address, using
 //	either a page table or a TLB.  Check for alignment and all sorts
 //	of other errors, and if everything is ok, set the use/dirty bits in

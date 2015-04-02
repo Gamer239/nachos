@@ -1,17 +1,18 @@
-// progtest.cc 
+// progtest.cc
 //	Test routines for demonstrating that Nachos can load
-//	a user program and execute it.  
+//	a user program and execute it.
 //
 //	Also, routines for testing the Console hardware device.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 #include "system.h"
 #include "synchconsole.h"
 #include "addrspace.h"
+#ifdef CHANGED
 #include "synch.h"
 #include "syscall.h"
 
@@ -25,6 +26,7 @@ SpaceId exec(char* filename, int argc, int argv);
 void
 StartProcess(char *filename)
 {
+	//TODO: should all of this code be removed?
 /*
 	OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
@@ -35,7 +37,7 @@ StartProcess(char *filename)
 		printf("Unable to open file %s\n", filename);
 		return;
 	}
-    space = new AddrSpace(executable);    
+    space = new AddrSpace(executable);
     currentThread->space = space;
 
     delete executable;			// close file
@@ -48,15 +50,18 @@ StartProcess(char *filename)
 					// the address space exits
 					// by doing the syscall "exit"
 */
+
 	char* argv[1];
 	argv[0] = "yolo";
 	exec(filename, 1, (int) argv);
+	#endif
 }
 
 // Data structures needed for the console test.  Threads making
 // I/O requests wait on a Semaphore to delay until the I/O completes.
-
+#ifdef CHANGED
 static SynchConsole *console;
+#endif
 static Semaphore *readAvail;
 static Semaphore *writeDone;
 
@@ -73,8 +78,8 @@ static void WriteDone(int arg) { writeDone->V(); }
 // 	Test the console by echoing characters typed at the input onto
 //	the output.  Stop when the user types a 'q'.
 //----------------------------------------------------------------------
-
-void 
+#ifdef CHANGED
+void
 ConsoleTest (char *in, char *out)
 {
     char ch;
@@ -85,13 +90,10 @@ ConsoleTest (char *in, char *out)
     printf("\nstarting the console\n");
     for (;;) {
 	//readAvail->P();		// wait for character to arrive
-    //printf("\nget a char\n");
 	ch = console->GetChar();
-    //printf("\nread char\n");
 	console->PutChar(ch);	// echo it!
-    //printf("\nput char\n");
-    //printf("\nput char\n");
 	//writeDone->P() ;        // wait for write to finish
 	if (ch == 'q') return;  // if q, quit
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#ifdef CHANGED
 #include "pagemap.h"
 #include "machine.h"
 
@@ -14,3 +15,5 @@ PageMap::PageMap(int numpages) :
 	BitMap(numpages)
 {
 }
+
+#endif
