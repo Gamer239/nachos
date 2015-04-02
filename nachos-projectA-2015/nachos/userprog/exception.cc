@@ -118,7 +118,6 @@ void ExceptionHandler(ExceptionType which) {
 					i = 0;
 					while (c != '\0' && i < BUFFER_SIZE) {
 						UserTranslate::ReadMem(addr + i, 1, (int *) &c);
-						//sprintf(buf + strlen(buf), "%c", c);
 						buf[i]=c;
 						i++;
 					}
@@ -138,7 +137,6 @@ void ExceptionHandler(ExceptionType which) {
 					{
 						mapped_id = -1;
 					}
-					// printf("open id is %d\n", mapped_id);
 					machine->WriteRegister(2, mapped_id);
 					break;
 				}
@@ -170,17 +168,15 @@ void ExceptionHandler(ExceptionType which) {
 									  {
 										  break;
 									  }
-									  //printf("%c", buff);
 									  write = UserTranslate::WriteMem( addr + read, 1, ( int ) buff );
 									  read++;
 								  }
 							  }
 							  else
 							  {
-								  //TODO: we never read anything because that file isn't open, handle this?
-								  printf( "Error reading file %d\n", mapped_id );
+								  //printf( "Error reading file %d\n", mapped_id );
+									read = -1;
 							  }
-							  //printf("\n");
 
 							  machine->WriteRegister(2, read);
 							  break;
@@ -192,25 +188,18 @@ void ExceptionHandler(ExceptionType which) {
 							  int size = (int) machine->ReadRegister(5);
 							  const int mapped_id = (int) machine->ReadRegister(6);
 
-							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
-
 							  int wrote = 0;
 							  int value;
 							  char buff;
 							  bool read;
 							  int write_count = 1;
-							  //printf( "addr %d size %d mapped_id %d\n", addr, size, mapped_id);
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-								  //printf( "addr %d size %d mapped_id %d 256\n", addr, size, mapped_id);
 								  while( wrote < size && buff != EOF && write_count > 0 )
 								  {
-									  //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
 									  read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
 									  buff = value;
-									  //printf( "addr %d size %d mapped_id %d 261\n", addr, size, mapped_id);
-									  //printf("%c", buff);
 									  if ( mapped_id == ConsoleOutput )
 									  {
 										  WriteFile( ConsoleOutput, &buff, 1 );
@@ -221,7 +210,6 @@ void ExceptionHandler(ExceptionType which) {
 									  }
 									  else
 									  {
-										  //printf("mapped_id %d consoleinput %d\n", mapped_id, ConsoleInput);
 										  break;
 									  }
 									  wrote++;
@@ -229,17 +217,9 @@ void ExceptionHandler(ExceptionType which) {
 							  }
 							  else
 							  {
-								  //TODO: we never write anything because the file isnt open, handle this?
-								  printf( "Error writing file %d\n", mapped_id );
+								  //printf( "Error writing file %d\n", mapped_id );
+									wrote = -1;
 							  }
-							  // printf("\nWrote %d bytes\n", wrote);
-							  /*
-								 while (wrote < size && buf != EOF) {
-								 read = UserTranslate::ReadMem((int) (addr + wrote), 1, (int*) &buf);
-								 WriteFile(fileid, &buf, 1);
-								 wrote++;
-								 }
-								 */
 
 							  machine->WriteRegister(2, wrote);
 
@@ -259,8 +239,8 @@ void ExceptionHandler(ExceptionType which) {
 							  }
 							  else
 							  {
-								  //TODO: we are trying to close a file handler that doesnt exist?
-								  printf( "Error closing file %d\n", mapped_id );
+								  //ignore the close if it doesnt exist
+								  //printf( "Error closing file %d\n", mapped_id );
 							  }
 						  }
 						  break;
