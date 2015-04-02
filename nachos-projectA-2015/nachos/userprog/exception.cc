@@ -117,7 +117,7 @@ void ExceptionHandler(ExceptionType which) {
 					c = '1';
 					i = 0;
 					while (c != '\0' && i < BUFFER_SIZE) {
-						machine->ReadMem(addr + i, 1, (int *) &c);
+						UserTranslate::ReadMem(addr + i, 1, (int *) &c);
 						//sprintf(buf + strlen(buf), "%c", c);
 						buf[i]=c;
 						i++;
@@ -171,7 +171,7 @@ void ExceptionHandler(ExceptionType which) {
 										  break;
 									  }
 									  //printf("%c", buff);
-									  write = machine->WriteMem( addr + read, 1, ( int ) buff );
+									  write = UserTranslate::WriteMem( addr + read, 1, ( int ) buff );
 									  read++;
 								  }
 							  }
@@ -207,7 +207,7 @@ void ExceptionHandler(ExceptionType which) {
 								  while( wrote < size && buff != EOF && write_count > 0 )
 								  {
 									  //printf( "addr %d size %d mapped_id %d 259\n", addr, size, mapped_id);
-									  read = machine->ReadMem((int) (addr + wrote), 1, &value);
+									  read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
 									  buff = value;
 									  //printf( "addr %d size %d mapped_id %d 261\n", addr, size, mapped_id);
 									  //printf("%c", buff);
@@ -235,7 +235,7 @@ void ExceptionHandler(ExceptionType which) {
 							  // printf("\nWrote %d bytes\n", wrote);
 							  /*
 								 while (wrote < size && buf != EOF) {
-								 read = machine->ReadMem((int) (addr + wrote), 1, (int*) &buf);
+								 read = UserTranslate::ReadMem((int) (addr + wrote), 1, (int*) &buf);
 								 WriteFile(fileid, &buf, 1);
 								 wrote++;
 								 }
