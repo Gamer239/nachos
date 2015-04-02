@@ -65,7 +65,44 @@ each write passed or failed.
  current running process and re-insert it into the queue, based on it priority. 
 
  SynchConsole
- -
+ SynchConsole( char* readFile, char* writeFile )
+ -This function initializes the console which in the background
+ opens up the machine's console. It then creates its own semaphores
+ to handle waiting. If readFile and WriteFile are NULL then they
+ get set as ConsoleInput and ConsoleOutput
+ -Returns nothing.
+
+ ~SynchConsole
+ -This function destroys the SynchConsole
+ -Returns nothing.
+
+ ConsoleReadPoll( int c )
+ -This function is called by the parent when there is a char available
+ -Returns nothing
+
+ ConsoleWriteDone( int c )
+ -This function is called by the parent when the write finishes
+ -Return nothing.
+
+ CheckCharAvailDone( )
+ -This function releases a waiting "get" call.
+ Returns nothing.
+
+ WriteDoneDone( )
+ -This function releases a waiting "put" call.
+ Returns nothing.
+
+ GetChar( )
+ -This function asks the console for a character and then locks
+ itself until a char the interrupt of a char being available
+ releases it.
+ -Returns a char if one was found or EOF if it was the end of the file
+
+ PutChar( )
+ -This function puts a char into the console and then locks
+ itself until the write is complete and it gets released
+ by the interrupt calling the WriteDoneDone function.
+ -Returns nothing.
 
  Tests
  - test/retadd: spawns 5 child processes each with a different return value in
