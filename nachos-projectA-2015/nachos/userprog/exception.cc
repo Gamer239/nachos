@@ -262,14 +262,17 @@ void ExceptionHandler(ExceptionType which) {
 			}
 		case PageFaultException:
 			printf("Page Fault - Exiting Process\n");
+			exit(-1);
 			break;
 
 		case ReadOnlyException:
 			printf("Write attempted on read-only page - Exiting\n");
+			exit(-1);
 			break;
 
 		case BusErrorException:
 			printf("Translation resulted in invalid physical address - Exiting\n");
+			exit(-1);
 			break;
 
 		case AddressErrorException:
@@ -283,6 +286,7 @@ void ExceptionHandler(ExceptionType which) {
 
 		case IllegalInstrException:
 			printf("Illegal instruction - Exiting\n");
+			exit(-1);
 			break;
 
 

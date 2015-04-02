@@ -284,7 +284,6 @@ void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
 /**
  * Should load the arguments into their correct places in memory, just before
  * the code section, so the user program can access them.
- */
 void AddrSpace::LoadArguments(){
 	int args[argc];
 	int strLen;
@@ -319,4 +318,5 @@ void AddrSpace::LoadArguments(){
 	};
 
 }
+*/
 #endif
