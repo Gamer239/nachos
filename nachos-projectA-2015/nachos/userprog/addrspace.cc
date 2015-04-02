@@ -141,7 +141,10 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	}
 }
 
-//TODO: add comment block
+/**
+ * Given the virtualAddr and inFileAddr of an NOFF executable, load the code and
+ * init data into this address spaces possible discontiguous pages in memory.
+ */
 void AddrSpace::LoadMem(int virtualAddr, int size, int inFileAddr, OpenFile* executable) {
 	if (size > 0) {
 		DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", virtualAddr, size);
@@ -235,12 +238,19 @@ void AddrSpace::RestoreState()
 	machine->pageTableSize = numPages;
 }
 
-//TODO: add comment block
+/**
+ * Check if the memFull bit was set on this AddrSpace instance,
+ * indicating that there are not enough pages to be able to completely
+ * load the program into memory.
+ */
 bool AddrSpace::GetFull() {
 	return memFull;
 }
 
-//TODO: add comment block
+/**
+ * Sets the argument fields "argc" and "argv" for the this AddrSpace instance,
+ * we load them into their correct places in memory in AddrSpace::LoadArguments.
+ */
 void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
 	char temp[128];
 	this->argc = argc;
@@ -260,7 +270,10 @@ void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
 
 }
 
-//TODO: add comment block
+/**
+ * Should load the arguments into their correct places in memory, just before
+ * the code section, so the user program can access them.
+ */
 void AddrSpace::LoadArguments(){
 	int args[argc];
 	int strLen;

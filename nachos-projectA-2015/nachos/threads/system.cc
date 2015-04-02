@@ -63,26 +63,22 @@ extern void Cleanup();
 //	"dummy" is because every interrupt handler takes one argument,
 //		whether it needs it or not.
 //----------------------------------------------------------------------
-#ifdef CHANGED
 static void
 TimerInterruptHandler(int dummy)
 {
-	// only do this every N timer ticks?
 	if (interrupt->getStatus() != IdleMode)
 	interrupt->YieldOnReturn();
 }
 
+#ifdef CHANGED
 static int quant = 0;
 
-//TODO: add comment block
+// Timer interrupt handler which implements our time slicing feature
 static void TimeSlicingHandler(int dummy) {
-
 	if (++quant % SLICE == 0) {
 		quant = 0;
-		// printf("Going to Yield %s\n", currentThread->getName());
 		interrupt->YieldOnReturn();
 	}
-
 }
 #endif
 //----------------------------------------------------------------------
