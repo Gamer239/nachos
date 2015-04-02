@@ -184,9 +184,11 @@ void ExceptionHandler(ExceptionType which) {
 
 			case SC_Write:
 						  {
+								//printf("\nentering sc_write\n");
 							  char * addr = (char *) machine->ReadRegister(4);
 							  int size = (int) machine->ReadRegister(5);
 							  const int mapped_id = (int) machine->ReadRegister(6);
+
 
 							  int wrote = 0;
 							  int value;
@@ -196,12 +198,15 @@ void ExceptionHandler(ExceptionType which) {
 							  if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
 							  {
 								  OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+									//printf("mapped id %d|\n", mapped_id);
 								  while( wrote < size && buff != EOF && write_count > 0 )
 								  {
 									  read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
 									  buff = value;
+										//printf("read %c\n", buff);
 									  if ( mapped_id == ConsoleOutput )
 									  {
+											//printf("%c", buff);
 										  WriteFile( ConsoleOutput, &buff, 1 );
 									  }
 									  else if ( mapped_id != ConsoleInput )
@@ -217,10 +222,10 @@ void ExceptionHandler(ExceptionType which) {
 							  }
 							  else
 							  {
-								  //printf( "Error writing file %d\n", mapped_id );
+								  //printf( "\nError writing file %d\n", mapped_id );
 									wrote = -1;
 							  }
-
+								//printf("\nleaving sc_write\n");
 							  machine->WriteRegister(2, wrote);
 
 							  break;

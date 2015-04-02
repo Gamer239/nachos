@@ -40,7 +40,7 @@ main()
 	{
 		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, strlen(buffer), fileId );
+	Read( buffer, strlen(testString), fileId );
 	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
@@ -58,7 +58,7 @@ main()
 	{
 		Write( open_failed, strlen(open_failed), ConsoleOutput );;
 	}
-	Read( buffer, strlen(buffer), fileId );
+	Read( buffer, strlen(testString), fileId );
 	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
@@ -76,7 +76,7 @@ main()
 	{
 		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, strlen(buffer)+10, fileId );
+	Read( buffer, strlen(testString)+10, fileId );
 	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
@@ -94,7 +94,7 @@ main()
 	{
 		Write( open_failed, strlen(open_failed), ConsoleOutput );
 	}
-	Read( buffer, strlen(buffer)+10, fileId );
+	Read( buffer, strlen(testString)+10, fileId );
 	Write( buffer, strlen(buffer), ConsoleOutput );
 	Close( fileId );
 
