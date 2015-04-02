@@ -26,6 +26,7 @@
 #include "syscall.h"
 #include "process.h"
 #include "thread.h"
+#ifdef CHANGED
 #include "exception_impl.h"
 #include "exception_utils.h"
 //----------------------------------------------------------------------
@@ -109,7 +110,7 @@ void ExceptionHandler(ExceptionType which) {
 					break;
 				}
 
-			case SC_Open: 
+			case SC_Open:
 				{
 					DEBUG('s', "Call to Syscall Open (SC_Open).\n");
 					addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
@@ -285,3 +286,5 @@ void ExceptionHandler(ExceptionType which) {
 
 	interrupt->SetLevel(oldLevel);
 }
+
+#endif

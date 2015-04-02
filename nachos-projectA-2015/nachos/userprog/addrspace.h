@@ -1,5 +1,5 @@
-// addrspace.h 
-//	Data structures to keep track of executing user programs 
+// addrspace.h
+//	Data structures to keep track of executing user programs
 //	(address spaces).
 //
 //	For now, we don't keep any information about address spaces.
@@ -7,7 +7,7 @@
 //	executing the user program (see thread.h).
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #ifndef ADDRSPACE_H
@@ -15,7 +15,9 @@
 
 #include "copyright.h"
 #include "filesys.h"
+#ifdef CHANGED
 #include "pagemap.h"
+#endif
 
 #define UserStackSize		1024 	// increase this as necessary!
 
@@ -30,21 +32,25 @@ class AddrSpace {
 					// before jumping to user code
 
     void SaveState();			// Save/restore address space-specific
-    void RestoreState();		// info on a context switch 
-	bool GetFull();			// so we can check if space creation failed
-	void SetArguments(int argc, char* argv[], char* filename);
-	void LoadArguments();
+    void RestoreState();		// info on a context switch
+    #ifdef
+	  bool GetFull();			// so we can check if space creation failed
+	  void SetArguments(int argc, char* argv[], char* filename);
+	  void LoadArguments();
+    #endif
 
   private:
     TranslationEntry *pageTable;	// Assume linear page table translation
 					// for now!
-    unsigned int numPages;		// Number of pages in the virtual 
+    unsigned int numPages;		// Number of pages in the virtual
 					// address space
+  #ifdef CHANGED
 	PageMap* pageMap;
 	bool memFull;
 	int argc;
 	char** argv;
 	void LoadMem(int virtualAddr, int size, int inFileAddr, OpenFile* executable);
+  #endif
 };
 
 #endif // ADDRSPACE_H
