@@ -1,47 +1,56 @@
-2b)
+System calls
+Create( char* name );
+-This system call creates a new file if it doesnt exist.
+-Returns nothing whether or not the file is created.
 
-If a car arrives while traffic is currently moving in its direction it will
-have priority over another car who has been waiting for longer in the other
-direction. This happens because the current direction of travel will wait
-until there are no more available cars for that direction. After that point
-it will then release lock to allow the other side to travel.
+OpenFileId Open( char* filename )
+-This system call attempts to open the file.
+If it opens the file then it maps the OpenFileId to
+the internal pointer.
+-Returns a positive integer on success and -1 if the file did not
+exist
 
-3)
+Write( char* buffer, int size, OpenFileId id )
+-This system call attempts to write up to size bytes from the
+buffer to the id. This system call will check to see if the id is
+valid and then write one byte at a time to the id and check to see if
+each write passed or failed.
+ -Returns nothing.
 
-The threads with the higher priorities will run first. In the case of two 
-producers and one consumer, where one producer is of a higher priority than
-the other and the consumer thread, the single producer will run, fill up the
-buffer (or use put all of its resources in the buffer) and then the consumer
-and producer that are left will continue to remove items and add items,
-respectively.
+ Read( char* buffer, int size, OpenFileId id )
+ -This system call attempts to read up to size bytes from the
+ id and write them into the buffer. This system call will check to see
+ if the id is valid and then write one byte at a time to the buffer
+ and check to see if each read passed or failed.
+ -Returns nothing.
 
-In the case where the two producers are the same priority, and the consumer
-is a higher priority, the consumer will consume items in the buffer until it
-is empty, and then a producer will put items into the buffer until it must
-yield the processor, and the consumer will consume it, immediately. This will
-happen until all producer resources have been put into the buffer and consumed.
+ Close( OpenFileId id )
+ -This system call attempts to close the id if it is currently open
+ for the currently running program. If the id is not valid
+ then the close call is ignorned.
+ -Returns nothing.
 
-4a)
+ Exit( int status )
+ -
+ -Returns
 
-A hardware timer generates a CPU interrupt every X milliseconds. A hardware
-timer is emulated by scheduling an interrupt to occur every time
-stats->totalTicks has increased by TimerTicks.
+ Exec( char* name )
+ -
+ -Returns spaceid...
 
-4b)
+ Join( SpaceId id )
+ -
+ -Returns int...
 
-A thread also allocates its own stack, ensures it it deallocated correctly
-upon exit, and ensures no stack overflows have occured.
 
-User state is also saved in the thread code.
+ Exceptions
+ -
 
-4c)
+ Scheduling Algorithms
+ -
 
-As described in the i386 hardware specific assembly routine file 'swtch.s',
-when a context switch occurs, the current threads registers are stored on
-the stack pointer, and the new threads registers are loaded.
+ SynchConsole
+ -
 
-5)
-
-Tests: All tests in threads/tests/ have been run, after linking them as
-described in the project specifications.
-
+ Tests
+ -
