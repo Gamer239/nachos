@@ -317,4 +317,8 @@ void AddrSpace::LoadArguments(){
 
 }
 */
+
+int AddrSpace::GetNumPages() {
+	return numPages;
+}
 #endif

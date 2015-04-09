@@ -37,6 +37,7 @@ class AddrSpace {
 	  bool GetFull();			// so we can check if space creation failed
 	  void SetArguments(int argc, char* argv[], char* filename);
 	  void LoadArguments();
+	  int GetNumPages();
     #endif
 
   private:
