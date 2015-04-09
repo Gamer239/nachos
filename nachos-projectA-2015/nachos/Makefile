@@ -8,10 +8,10 @@ LPR = lpr
 all: 
 #	cd threads; $(MAKE) depend
 #	cd threads; $(MAKE) nachos
-	cd userprog; $(MAKE) depend 
-	cd userprog; $(MAKE) nachos 
-#	cd vm; $(MAKE) depend
-#	cd vm; $(MAKE) nachos 
+#	cd userprog; $(MAKE) depend 
+#	cd userprog; $(MAKE) nachos 
+	cd vm; $(MAKE) depend
+	cd vm; $(MAKE) nachos 
 #	cd filesys; $(MAKE) depend
 #	cd filesys; $(MAKE) nachos 
 #	cd network; $(MAKE) depend
