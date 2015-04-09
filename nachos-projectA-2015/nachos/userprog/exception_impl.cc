@@ -6,6 +6,204 @@
 #include "system.h"
 #include "exception_utils.h"
 
+void HandleSyscall(int type) {
+	
+	int addr, argc, argv, ret, i = 0;
+	char c, buf[BUFFER_SIZE], filename[BUFFER_SIZE];
+	bzero(buf, BUFFER_SIZE);
+
+	switch (type) {
+		case SC_Halt:
+			printf("Shutdown, initiated by user program.\n");
+			interrupt->Halt();
+			break;
+
+		case SC_Exit:
+			{
+				DEBUG('s', "Call to Syscall Exit (SC_Exit).\n");
+				exit(machine->ReadRegister(4));
+				break;
+			}
+		case SC_Exec:
+			{
+				addr = machine->ReadRegister(4);
+				ReadString(addr, filename);
+				DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
+				argc = machine->ReadRegister(5);
+				argv = machine->ReadRegister(6);
+				ret = exec(filename, argc, argv);
+				machine->WriteRegister(2, ret);
+				break;
+			}
+
+		case SC_Join:
+			{
+				DEBUG('s', "Call to Syscall Join (SC_Join) from %s.\n", currentThread->getName());
+				int pid = machine->ReadRegister(4);
+				ret = (pid > 0) ? join(pid) : -1;
+				machine->WriteRegister(2, ret);
+				break;
+			}
+
+		case SC_Create:
+			{
+				DEBUG('s', "Call to Syscall Create (SC_Create).\n");
+				create((char *)machine->ReadRegister(4));
+				// no return value for Create
+				break;
+			}
+
+		case SC_Open:
+			{
+				DEBUG('s', "Call to Syscall Open (SC_Open).\n");
+				addr =  machine->ReadRegister(4); // char* filename arg, we need to read this buf
+				c = '1';
+				i = 0;
+				while (c != '\0' && i < BUFFER_SIZE) {
+					UserTranslate::ReadMem(addr + i, 1, (int *) &c);
+					buf[i]=c;
+					i++;
+				}
+
+				OpenFile* fileId = fileSystem->Open(buf);
+				//find the first available key
+				int mapped_id = 0;
+				while( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) && fileId != NULL )
+				{
+					mapped_id++;
+				}
+				if ( fileId != NULL )
+				{
+					currentThread->fileHandlers->insert( std::pair<int, OpenFile*>( mapped_id, fileId ) );
+				}
+				else
+				{
+					mapped_id = -1;
+				}
+				machine->WriteRegister(2, mapped_id);
+				break;
+			}
+
+		case SC_Read:
+			{
+				addr = machine->ReadRegister(4);
+				int size = machine->ReadRegister(5);
+				int mapped_id = machine->ReadRegister(6);
+
+				int read = 0;
+				char buff;
+				bool write;
+				int read_count = 1;
+				//check to make sure that our file handler exists
+				if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
+				{
+					OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+					while (read < size && read_count > 0)
+					{
+						if ( mapped_id == ConsoleInput )
+						{
+							Read(ConsoleInput, &buff, 1 );
+						}
+						else if ( mapped_id != ConsoleOutput )
+						{
+							read_count = fileId->Read(&buff, 1);
+						}
+						else
+						{
+							break;
+						}
+						write = UserTranslate::WriteMem( addr + read, 1, ( int ) buff );
+						read++;
+					}
+				}
+				else
+				{
+					read = -1;
+				}
+
+				machine->WriteRegister(2, read);
+				break;
+			}
+
+		case SC_Write:
+			{
+				addr = machine->ReadRegister(4);
+				int size = (int) machine->ReadRegister(5);
+				const int mapped_id = (int) machine->ReadRegister(6);
+
+				int wrote = 0;
+				int value;
+				char buff;
+				bool read;
+				int write_count = 1;
+
+				if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
+				{
+					OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+					while( wrote < size && buff != EOF && write_count > 0 )
+					{
+						read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
+						buff = value;
+						if ( mapped_id == ConsoleOutput )
+						{
+							WriteFile( ConsoleOutput, &buff, 1 );
+						}
+						else if ( mapped_id != ConsoleInput )
+						{
+							write_count = fileId->Write(&buff, 1);
+						}
+						else
+						{
+							break;
+						}
+						wrote++;
+					}
+				}
+				else
+				{
+					wrote = -1;
+				}
+				machine->WriteRegister(2, wrote);
+
+				break;
+			}
+
+		case SC_Close:
+			{
+				DEBUG('s', "Call to Syscall Close (SC_Close).\n");
+				int mapped_id = (int) machine->ReadRegister(4);
+				if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( )
+						&& ( mapped_id != 0 || mapped_id != 1 ) )
+				{
+					OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+					currentThread->fileHandlers->erase( mapped_id );
+					delete fileId;
+				}
+				else
+				{
+					//ignore the close if it doesnt exist
+				}
+				break;
+			}
+
+		case SC_Fork:
+			DEBUG('s', "Call to Syscall Fork (SC_Fork).\n");
+			break;
+
+		case SC_Yield:
+			DEBUG('s', "Call to Syscall Yield (SC_Yield).\n");
+			break;
+
+		default:
+			printf("Unexpected Syscall Code: %d\n", type);
+			ASSERT(FALSE);
+			break;
+	}
+
+
+
+}
+
 void startProcess(int n) {
 	currentThread->space->RestoreState();
 	currentThread->space->InitRegisters();

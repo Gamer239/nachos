@@ -115,16 +115,12 @@ AddrSpace::AddrSpace(OpenFile *executable)
 				memFull = true;
 				break;
 			}
-			pageTable[i].valid = TRUE;
+			pageTable[i].valid = FALSE;
 			pageTable[i].use = FALSE;
 			pageTable[i].dirty = FALSE;
 			pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
 			// a separate page, we could set its
 			// pages to be read-only
-		}
-
-		for (i = 0; i < numPages; i++) {
-
 		}
 	}
 
@@ -139,11 +135,13 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	// bzero(machine->mainMemory, size);
 
 	// then, copy in the code and data segments into memory
+	/*
 	if (!memFull) {
 		LoadMem(noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, executable);
 		LoadMem(noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr,
 				executable);
 	}
+	*/
 }
 
 /**

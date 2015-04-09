@@ -8,4 +8,3 @@ test/*
 !test/*.c
 userprog/swtch.s
 vm/swtch.s
-../../proj4.tgz

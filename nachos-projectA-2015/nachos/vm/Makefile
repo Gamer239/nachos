@@ -612,7 +612,8 @@ addrspace.o: ../userprog/addrspace.cc ../threads/copyright.h \
  ../userprog/syscall.h ../threads/scheduler.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
  ../userprog/user_translate.h ../machine/translate.h \
- ../userprog/addrspace.h ../bin/noff.h ../userprog/exception_utils.h
+ ../userprog/addrspace.h ../bin/noff.h ../userprog/exception_utils.h \
+ ../userprog/process.h ../threads/thread.h
 bitmap.o: ../userprog/bitmap.cc ../threads/copyright.h \
  ../userprog/bitmap.h ../threads/utility.h ../threads/copyright.h \
  ../threads/bool.h ../machine/sysdep.h /usr/include/stdio.h \
@@ -1130,7 +1131,8 @@ exception_utils.o: ../userprog/exception_utils.cc ../threads/system.h \
  ../userprog/syscall.h ../threads/scheduler.h ../machine/interrupt.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
  ../userprog/user_translate.h ../machine/translate.h \
- ../userprog/user_translate.h ../userprog/exception_utils.h
+ ../userprog/user_translate.h ../userprog/exception_utils.h \
+ ../userprog/process.h ../threads/thread.h
 exception_impl.o: ../userprog/exception_impl.cc \
  ../userprog/exception_impl.h ../userprog/syscall.h \
  ../threads/copyright.h \

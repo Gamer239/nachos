@@ -4,6 +4,17 @@
 #include "exception_utils.h"
 #include "machine.h"
 
+Process* getCurrentProcess() {
+	std::map<int, Process*>* procMap = Process::GetProcMap();
+	Process* currentProcess;
+	if (procMap->find(currentThread->GetId()) != procMap->end()) {
+		currentProcess = procMap->at(currentThread->GetId());
+	} else {
+		ASSERT(false);
+	}
+	return currentProcess;	
+}
+
 void ReadString(int addr, char* buf) {
 	char c;
 	buf[0] = '\0';
