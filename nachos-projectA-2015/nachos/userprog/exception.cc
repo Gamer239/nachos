@@ -68,11 +68,10 @@ void ExceptionHandler(ExceptionType which) {
 
 		case PageFaultException: 
 			{
-				printf("Page Fault - Exiting Process\n");
 				Process* currentProcess = getCurrentProcess();
 				if (machine->registers[BadVAddrReg] >= currentThread->space->GetNumPages()) {
-					// if out of range - if bad v addr  < 0 or > size of current
-					// process page table
+					printf("Page fault: virtual address out of range - exiting process\n");
+					exit(-1);
 				} else {
 					// else (is unloaded page) 
 				}
