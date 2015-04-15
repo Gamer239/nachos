@@ -14,10 +14,11 @@ void HandleSyscall(int type) {
 
 	switch (type) {
 		case SC_Halt:
-			printf("Shutdown, initiated by user program.\n");
-			interrupt->Halt();
-			break;
-
+			{
+				printf("Shutdown, initiated by user program.\n");
+				interrupt->Halt();
+				break;
+			}
 		case SC_Exit:
 			{
 				DEBUG('s', "Call to Syscall Exit (SC_Exit).\n");
@@ -290,7 +291,7 @@ SpaceId exec(char *filename, int argc, int argv) {
 	procMap->insert(std::pair<int, Process*>(parentId, parent));
 	procMap->insert(std::pair<int, Process*>(thread->GetId(), child));
 	// printf("inserted pid %d into procmap\n", thread->GetId());
-	delete executable;
+	// delete executable;
 
 	// check if the returned address space failed to allocate
 	// the number of pages we needed

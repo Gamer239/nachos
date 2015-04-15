@@ -17,41 +17,46 @@
 #include "filesys.h"
 #ifdef CHANGED
 #include "pagemap.h"
+#include "noff.h"
 #endif
 
 #define UserStackSize		1024 	// increase this as necessary!
 
 class AddrSpace {
-  public:
-    AddrSpace(OpenFile *executable);	// Create an address space,
-					// initializing it with the program
-					// stored in the file "executable"
-    ~AddrSpace();			// De-allocate an address space
+	public:
+		AddrSpace(OpenFile *executable);	// Create an address space,
+		// initializing it with the program
+		// stored in the file "executable"
+		~AddrSpace();			// De-allocate an address space
 
-    void InitRegisters();		// Initialize user-level CPU registers,
-					// before jumping to user code
+		void InitRegisters();		// Initialize user-level CPU registers,
+		// before jumping to user code
 
-    void SaveState();			// Save/restore address space-specific
-    void RestoreState();		// info on a context switch
-    #ifdef CHANGED
-	  bool GetFull();			// so we can check if space creation failed
-	  void SetArguments(int argc, char* argv[], char* filename);
-	  void LoadArguments();
-	  int GetNumPages();
-    #endif
+		void SaveState();			// Save/restore address space-specific
+		void RestoreState();		// info on a context switch
+#ifdef CHANGED
+		bool GetFull();			// so we can check if space creation failed
+		void SetArguments(int argc, char* argv[], char* filename);
+		void LoadArguments();
+		void LoadPage(int vPage);
+		void LoadMem(int addr, int fileAddr, int size);
+		int GetNumPages();
+#endif
 
-  private:
-    TranslationEntry *pageTable;	// Assume linear page table translation
-					// for now!
-    unsigned int numPages;		// Number of pages in the virtual
-					// address space
-  #ifdef CHANGED
-	PageMap* pageMap;
-	bool memFull;
-	int argc;
-	char** argv;
-	void LoadMem(int virtualAddr, int size, int inFileAddr, OpenFile* executable);
-  #endif
+	private:
+		OpenFile* executable;
+		NoffHeader noffH;
+		TranslationEntry *pageTable;	// Assume linear page table translation
+		// for now!
+		unsigned int numPages;		// Number of pages in the virtual
+		// address space
+#ifdef CHANGED
+		PageMap* pageMap;
+		bool memFull;
+		int argc;
+		char** argv;
+		// void LoadMem(int virtualAddr, int size, int inFileAddr);
+#endif
 };
 
 #endif // ADDRSPACE_H

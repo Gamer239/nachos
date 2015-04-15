@@ -18,7 +18,9 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
+#ifndef CHANGED
 #include "noff.h"
+#endif
 #ifdef CHANGED
 #include "exception_utils.h"
 #endif
@@ -63,10 +65,10 @@ SwapHeader (NoffHeader *noffH)
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 #ifdef CHANGED
-AddrSpace::AddrSpace(OpenFile *executable)
+AddrSpace::AddrSpace(OpenFile *execFile)
 {
-	NoffHeader noffH;
 	unsigned int i, size;
+	executable = execFile;
 	executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
 	if ((noffH.noffMagic != NOFFMAGIC) &&
 			(WordToHost(noffH.noffMagic) == NOFFMAGIC))
@@ -108,7 +110,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		for (i = 0; i < numPages; i++) {
 			pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 			// find first open pages
-			pageTable[i].physicalPage = pageMap->Find();
+			pageTable[i].physicalPage = 0;
 			// printf("Allocated physical page %d as virt page %d\n", pageTable[i].physicalPage,
 			// pageTable[i].virtualPage);
 			if (pageTable[i].physicalPage == -1) {
@@ -144,22 +146,19 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	*/
 }
 
-/**
- * Given the virtualAddr and inFileAddr of an NOFF executable, load the code and
- * init data into this address spaces possible discontiguous pages in memory.
- */
-void AddrSpace::LoadMem(int virtualAddr, int size, int inFileAddr, OpenFile* executable) {
-	if (size > 0) {
-		DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", virtualAddr, size);
-
-		for (int i = 0; i < size; i++) {
-			int pageNum = (virtualAddr + i) / PageSize;
-			int offset = (virtualAddr + i) - (pageNum * PageSize);
-			DEBUG('a', "Initializing code ent, at page %d, offset %d\n", pageNum, offset);
-			executable->ReadAt(&(machine->mainMemory[pageTable[pageNum].physicalPage * PageSize + offset]), 1, inFileAddr + i);
-		}
+void AddrSpace::LoadMem(int addr, int fileAddr, int size) {
+	int pageNum;
+	int cAddr;
+	int offset;
+	// printf("writing %d bytes from 0x%x to 0x%x\n", size, fileAddr, addr); 
+	for (int i = 0; i < size; i++) {
+		pageNum = (addr + i) / PageSize;
+		offset = (addr + i) - (pageNum * PageSize);
+		cAddr = pageTable[pageNum].physicalPage * PageSize + offset;
+		executable->ReadAt(&(machine->mainMemory[cAddr]), 1, fileAddr + i);
 	}
 }
+
 #endif
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
@@ -176,6 +175,7 @@ AddrSpace::~AddrSpace()
 		}
 	}
 	delete pageTable;
+	delete executable;
 	#endif
 }
 
@@ -254,6 +254,7 @@ bool AddrSpace::GetFull() {
  * Sets the argument fields "argc" and "argv" for the this AddrSpace instance,
  * we load them into their correct places in memory in AddrSpace::LoadArguments.
  */
+/*
 void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
 
 	char temp[128];
@@ -278,7 +279,7 @@ void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
 	}
 
 }
-
+*/
 /**
  * Should load the arguments into their correct places in memory, just before
  * the code section, so the user program can access them.
@@ -322,3 +323,38 @@ int AddrSpace::GetNumPages() {
 	return numPages;
 }
 #endif
+
+void AddrSpace::LoadPage(int vAddr) {
+
+	// check physical page bitmap
+	int vPage = vAddr / PageSize;
+	int newPage;
+	if (pageMap->NumClear() <= 0) {
+		// if its full select victim page
+		ASSERT(false) // for now	
+	} else {
+		// else grab first open one
+		newPage = pageMap->Find();
+		// printf("going to load page into main mem frame: %d\n", newPage);
+	}
+
+	// set frame number
+	pageTable[vPage].physicalPage = newPage;
+	
+	int startAddr = vPage * PageSize;
+	int addr;
+	for (int i = 0; i < PageSize; i++) {
+		addr = startAddr + i;
+		if (addr >= noffH.code.virtualAddr &&
+				addr < noffH.code.virtualAddr + noffH.code.size) {
+			LoadMem(addr, noffH.code.inFileAddr + (startAddr - noffH.code.virtualAddr + i), 1);
+		} else if (addr >= noffH.initData.virtualAddr &&
+				addr < noffH.initData.virtualAddr + noffH.initData.size) {
+			LoadMem(addr, noffH.initData.inFileAddr + (startAddr - noffH.initData.virtualAddr + i), 1);
+		}
+	}
+
+	// mark page table entry as valid
+	pageTable[vPage].valid = TRUE;
+	// printf("vpage %d should now be loaded in phys frame %d..\n", vPage, newPage);
+}

@@ -58,10 +58,13 @@ void ExceptionHandler(ExceptionType which) {
 
 	IntStatus oldLevel = interrupt->SetLevel(IntOff); // yolo
 	int type = machine->ReadRegister(2);
+	bool sysCall = false;
+
 
 	switch (which) {
 		case SyscallException:
 			{
+				sysCall = true;
 				HandleSyscall(type);
 				break;
 			}
@@ -69,13 +72,15 @@ void ExceptionHandler(ExceptionType which) {
 		case PageFaultException: 
 			{
 				Process* currentProcess = getCurrentProcess();
-				if (machine->registers[BadVAddrReg] >= currentThread->space->GetNumPages()) {
-					printf("Page fault: virtual address out of range - exiting process\n");
+				if (machine->registers[BadVAddrReg] / PageSize >=
+						currentThread->space->GetNumPages()) {
+					// printf("Page fault: virtual address out of range: %d/%d - exiting process\n",
+					//	   	machine->registers[BadVAddrReg], currentThread->space->GetNumPages());
 					exit(-1);
 				} else {
-					// else (is unloaded page) 
+					// printf("Page fault: page not loaded into main memory - loading page now\n");
+					currentThread->space->LoadPage(machine->registers[BadVAddrReg]);
 				}
-				exit(-1);
 				break;
 			}
 
@@ -115,10 +120,11 @@ void ExceptionHandler(ExceptionType which) {
 
 	}
 
-	machine->WriteRegister(PrevPCReg, machine->ReadRegister(PrevPCReg) + 4);
-	machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
-	machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
-
+	if (sysCall) {
+		machine->WriteRegister(PrevPCReg, machine->ReadRegister(PrevPCReg) + 4);
+		machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
+		machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
+	}
 	interrupt->SetLevel(oldLevel);
 }
 
