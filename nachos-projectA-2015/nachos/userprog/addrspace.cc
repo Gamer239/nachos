@@ -334,6 +334,15 @@ void AddrSpace::LoadPage(int vAddr) {
 	// check physical page bitmap
 	int vPage = vAddr / PageSize;
 	int newPage;
+
+	// We need that core map that maps back from a
+	// physical page to a virtual page. I think I
+	// got this. each virtual address is specifc
+	// to the program. We need not only a map from
+	// frame number to virtual page number, but
+	// a map from the frame number to the thread as
+	// well as the corresponding virtual page number.
+
 	if (pageMap->NumClear() <= 0) {
 		newPage = pageMap->GetNextVictim();
 		DEBUG('v', "memory full, selecting victim for replacement: %d\n", newPage);
