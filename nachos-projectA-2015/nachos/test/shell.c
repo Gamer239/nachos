@@ -8,7 +8,7 @@ main()
 	OpenFileId input = ConsoleInput;
 	OpenFileId output = ConsoleOutput;
 	char prompt[2], ch, buffer[60], bytesbuf[10];
-	int i;
+	int i, ret;
 	int bytes;
 	char *argv[1];
 
@@ -34,7 +34,10 @@ main()
 				Write("PID: ", 5, output);
 				Write(itoa(newProc), strlen(itoa(newProc)), output);
 				Write("\n", 1, output);
-				Join(newProc);
+				ret = Join(newProc);
+				Write("Process 5 returned: ", 20, output);
+				Write(itoa(ret), strlen(itoa(ret)), output);
+				Write("\n", 1, output);
 			}
 		}
 	}

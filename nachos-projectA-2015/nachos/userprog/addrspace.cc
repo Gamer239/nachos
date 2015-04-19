@@ -84,10 +84,12 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 
 	memFull = false;
 	pageMap = PageMap::GetInstance();
+	/*
 	if (numPages > (unsigned int) pageMap->NumClear()) {
 		// printf("numPages(%d) > pageMap-NumClear()(%d)", numPages, pageMap->NumClear());
 		memFull = true;
 	}		// check we're not trying
+	*/
 	// to run anything too big --
 	// at least until we have
 	// virtual memory
@@ -126,12 +128,14 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 		}
 	}
 
-	/*
 	printf("Current status of pageMap after allocate:\n");
-	for (i = 0; i < NumPhysPages; i++) {
-		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', (i != 0 && i % 10 == 0) ? '\n' : ' ');
+	i = 0;
+	while (i < NumPhysPages) {
+		if (i % 8 == 0) printf("\n");
+		printf("%c ", pageMap->Test(i) ? 'X' : 'O');
+		i++;
 	}
-	*/
+	printf("\n\n");
 	// zero out the entire address space, to zero the unitialized data segment
 	// and the stack segment
 	// bzero(machine->mainMemory, size);
@@ -150,11 +154,12 @@ void AddrSpace::LoadMem(int addr, int fileAddr, int size) {
 	int pageNum;
 	int cAddr;
 	int offset;
-	// printf("writing %d bytes from 0x%x to 0x%x\n", size, fileAddr, addr); 
+	DEBUG('a', "writing %d bytes from 0x%x to 0x%x\n", size, fileAddr, addr); 
 	for (int i = 0; i < size; i++) {
 		pageNum = (addr + i) / PageSize;
 		offset = (addr + i) - (pageNum * PageSize);
 		cAddr = pageTable[pageNum].physicalPage * PageSize + offset;
+		DEBUG('a', "pageNum: %d, offset: %d, cAddr: 0x%x\n", pageNum, offset, cAddr);
 		executable->ReadAt(&(machine->mainMemory[cAddr]), 1, fileAddr + i);
 	}
 }
@@ -222,8 +227,8 @@ AddrSpace::InitRegisters()
 void AddrSpace::SaveState()
 {
 	#ifdef CHANGED
-	// 	pageTable = machine->pageTable;
-	//	numPages = machine->pageTableSize;
+	pageTable = machine->pageTable;
+	numPages = machine->pageTableSize;
 	#endif
 }
 
@@ -330,12 +335,12 @@ void AddrSpace::LoadPage(int vAddr) {
 	int vPage = vAddr / PageSize;
 	int newPage;
 	if (pageMap->NumClear() <= 0) {
-		// if its full select victim page
-		ASSERT(false) // for now	
+		newPage = pageMap->GetNextVictim();
+		DEBUG('v', "memory full, selecting victim for replacement: %d\n", newPage);
 	} else {
 		// else grab first open one
 		newPage = pageMap->Find();
-		// printf("going to load page into main mem frame: %d\n", newPage);
+		DEBUG('v', "going to load page into main mem frame: %d\n", newPage);
 	}
 
 	// set frame number
@@ -356,5 +361,5 @@ void AddrSpace::LoadPage(int vAddr) {
 
 	// mark page table entry as valid
 	pageTable[vPage].valid = TRUE;
-	// printf("vpage %d should now be loaded in phys frame %d..\n", vPage, newPage);
+	DEBUG('v', "vpage %d should now be loaded in phys frame %d..\n", vPage, newPage);
 }

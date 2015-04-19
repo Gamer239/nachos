@@ -60,7 +60,6 @@ void ExceptionHandler(ExceptionType which) {
 	int type = machine->ReadRegister(2);
 	bool sysCall = false;
 
-
 	switch (which) {
 		case SyscallException:
 			{
@@ -74,11 +73,11 @@ void ExceptionHandler(ExceptionType which) {
 				Process* currentProcess = getCurrentProcess();
 				if (machine->registers[BadVAddrReg] / PageSize >=
 						currentThread->space->GetNumPages()) {
-					// printf("Page fault: virtual address out of range: %d/%d - exiting process\n",
-					//	   	machine->registers[BadVAddrReg], currentThread->space->GetNumPages());
+					DEBUG('a', "Page fault: virtual address out of range: %d/%d - exiting process\n",
+					machine->registers[BadVAddrReg], currentThread->space->GetNumPages());
 					exit(-1);
 				} else {
-					// printf("Page fault: page not loaded into main memory - loading page now\n");
+					DEBUG('a', "Page fault: page not loaded into main memory - loading page now\n");
 					currentThread->space->LoadPage(machine->registers[BadVAddrReg]);
 				}
 				break;
