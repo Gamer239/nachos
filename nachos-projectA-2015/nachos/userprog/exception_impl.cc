@@ -195,6 +195,13 @@ void HandleSyscall(int type) {
 			DEBUG('s', "Call to Syscall Yield (SC_Yield).\n");
 			break;
 
+		case SC_Checkpoint:
+			DEBUG('s', "Call to Syscall Checkpoint (SC_Checkpoint).\n");
+			{
+
+			}
+			break;
+
 		default:
 			printf("Unexpected Syscall Code: %d\n", type);
 			ASSERT(FALSE);
