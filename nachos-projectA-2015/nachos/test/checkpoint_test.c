@@ -20,10 +20,10 @@ int
 main()
 {
 	/*
-	* This is a basic read write test to a file.
+	* This is a basic checkpoint test to a file.
 	*
 	*/
-	int res = CheckPoint("test");
+	int res = CheckPoint("test_file");
 
   Exit(0);
 }

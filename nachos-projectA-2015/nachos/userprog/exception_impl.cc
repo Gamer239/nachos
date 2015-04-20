@@ -198,7 +198,36 @@ void HandleSyscall(int type) {
 		case SC_Checkpoint:
 			DEBUG('s', "Call to Syscall Checkpoint (SC_Checkpoint).\n");
 			{
+				//create and open the file
+				addr = machine->ReadRegister(4);
+				ReadString(addr, filename);
+				//printf("trying to open %s\n", filename);
+				fileSystem->Create(filename, 0);
+				//printf("created\n");
+				OpenFile* fileId = fileSystem->Open(filename);
+				//printf("opened\n");
 
+				//save the checkpoint - lets write things in order of thread.h
+				//write the stack pointer
+				//fileId->Write((char*)&currentThread->stackTop, sizeof(currentThread->stackTop));
+
+				//write the machineState variables
+				for (i = 0; i < MachineStateSize; i++)
+				{
+					int value = machine->ReadRegister(i);
+					char small_buf[4];
+					small_buf[0] = ( value & 0xFF000000 ) >> 24;
+					small_buf[1] = ( value & 0x00FF0000 ) >> 16;
+					small_buf[2] = ( value & 0x0000FF00 ) >> 8;
+					small_buf[3] = ( value & 0x000000FF );
+					fileId->Write(small_buf, 4);
+					printf("wrote byte %d value %x \n", i, value);
+				}
+
+
+
+				//close the file
+				delete fileId;
 			}
 			break;
 
