@@ -21,6 +21,10 @@
 #endif
 
 #define UserStackSize		1024 	// increase this as necessary!
+#define IN_SWAP				-3
+#define NOT_LOADED			-4
+
+class PageMap;
 
 class AddrSpace {
 	public:
@@ -41,12 +45,15 @@ class AddrSpace {
 		void LoadPage(int vPage);
 		void LoadMem(int addr, int fileAddr, int size);
 		int GetNumPages();
+		void InvalidatePage(int vpn);
+		void LoadPageFromExecutable(int vPage);
+		TranslationEntry *pageTable;	// Assume linear page table translation
 #endif
 
 	private:
 		OpenFile* executable;
+		OpenFile* swap;
 		NoffHeader noffH;
-		TranslationEntry *pageTable;	// Assume linear page table translation
 		// for now!
 		unsigned int numPages;		// Number of pages in the virtual
 		// address space
@@ -55,6 +62,8 @@ class AddrSpace {
 		bool memFull;
 		int argc;
 		char** argv;
+		void SaveToSwap(int vPage);
+		void GetFromSwap(int vpage);
 		// void LoadMem(int virtualAddr, int size, int inFileAddr);
 #endif
 };

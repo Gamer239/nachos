@@ -73,11 +73,15 @@ void ExceptionHandler(ExceptionType which) {
 				Process* currentProcess = getCurrentProcess();
 				if (machine->registers[BadVAddrReg] / PageSize >=
 						currentThread->space->GetNumPages()) {
-					DEBUG('a', "Page fault: virtual address out of range: %d/%d - exiting process\n",
-					machine->registers[BadVAddrReg], currentThread->space->GetNumPages());
+					DEBUG('v', "[%d] Page fault: virtual address out of range: %d/%d - \
+							exiting process\n", currentThread->GetId(),
+							machine->registers[BadVAddrReg],
+							currentThread->space->GetNumPages());
 					exit(-1);
 				} else {
-					DEBUG('a', "Page fault: page not loaded into main memory - loading page now\n");
+					DEBUG('v', "[%d] Page fault: vpn %d not loaded into main memory - \
+							loading page now\n", currentThread->GetId(),
+							machine->registers[BadVAddrReg] / PageSize);
 					currentThread->space->LoadPage(machine->registers[BadVAddrReg]);
 				}
 				break;

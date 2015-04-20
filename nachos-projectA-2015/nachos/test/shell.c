@@ -35,7 +35,9 @@ main()
 				Write(itoa(newProc), strlen(itoa(newProc)), output);
 				Write("\n", 1, output);
 				ret = Join(newProc);
-				Write("Process 5 returned: ", 20, output);
+				Write("Process ", 8, output);
+				Write(itoa(newProc), strlen(itoa(newProc)), output);
+				Write(" returned: ", 11, output);
 				Write(itoa(ret), strlen(itoa(ret)), output);
 				Write("\n", 1, output);
 			}

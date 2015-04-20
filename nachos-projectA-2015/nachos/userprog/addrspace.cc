@@ -68,12 +68,17 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(OpenFile *execFile)
 {
 	unsigned int i, size;
+	char file_name[200];
 	executable = execFile;
 	executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
 	if ((noffH.noffMagic != NOFFMAGIC) &&
 			(WordToHost(noffH.noffMagic) == NOFFMAGIC))
 		SwapHeader(&noffH);
 	ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+	sprintf(file_name, "/tmp/swap.%d", (int) this);
+	ASSERT(fileSystem->Create(file_name, 0));
+	swap = fileSystem->Open(file_name);
 
 	// how big is address space?
 	size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
@@ -94,10 +99,8 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 	// at least until we have
 	// virtual memory
 
-
 	DEBUG('a', "Initializing address space, num pages %d, size %d\n",
 			numPages, size);
-
 	/*
 	printf("Current status of pageMap before allocate:\n");
 	for (i = 0; i < NumPhysPages; i++) {
@@ -105,6 +108,17 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 	}
 	printf("\n");
 	*/
+
+	printf("Current status of pageMap before allocate:\n");
+	i = 0;
+	while (i < NumPhysPages) {
+		if (i % 8 == 0) printf("\n");
+		printf("%c ", pageMap->Test(i) ? 'X' : 'O');
+		i++;
+	}
+	printf("\n\n");
+
+
 	// first, set up the translation
 	pageTable = new TranslationEntry[numPages];
 	if (machine->pageTable == NULL) machine->pageTable = pageTable;
@@ -112,13 +126,7 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 		for (i = 0; i < numPages; i++) {
 			pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
 			// find first open pages
-			pageTable[i].physicalPage = 0;
-			// printf("Allocated physical page %d as virt page %d\n", pageTable[i].physicalPage,
-			// pageTable[i].virtualPage);
-			if (pageTable[i].physicalPage == -1) {
-				memFull = true;
-				break;
-			}
+			pageTable[i].physicalPage = NOT_LOADED;
 			pageTable[i].valid = FALSE;
 			pageTable[i].use = FALSE;
 			pageTable[i].dirty = FALSE;
@@ -154,14 +162,33 @@ void AddrSpace::LoadMem(int addr, int fileAddr, int size) {
 	int pageNum;
 	int cAddr;
 	int offset;
-	DEBUG('a', "writing %d bytes from 0x%x to 0x%x\n", size, fileAddr, addr); 
 	for (int i = 0; i < size; i++) {
 		pageNum = (addr + i) / PageSize;
 		offset = (addr + i) - (pageNum * PageSize);
 		cAddr = pageTable[pageNum].physicalPage * PageSize + offset;
-		DEBUG('a', "pageNum: %d, offset: %d, cAddr: 0x%x\n", pageNum, offset, cAddr);
 		executable->ReadAt(&(machine->mainMemory[cAddr]), 1, fileAddr + i);
 	}
+}
+
+void AddrSpace::SaveToSwap(int vPage) {
+	swap->WriteAt(&(machine->mainMemory[pageTable[vPage].physicalPage * PageSize]), 
+			PageSize, vPage * PageSize);
+	pageTable[vPage].physicalPage = IN_SWAP;
+	pageTable[vPage].valid = false;
+}
+
+void AddrSpace::GetFromSwap(int vpage) {
+	char page[PageSize];
+	// ASSERT(coreMap->Check(vpage, pageTable[vpage].physicalPage));
+	swap->ReadAt(page, PageSize, vpage*PageSize);
+	for (int i = 0; i < PageSize; i++) {
+		machine->mainMemory[pageTable[vpage].physicalPage * PageSize + i] = page[i];
+	}
+	DEBUG('v', "[VMEM] Loaded: vitrPage %d of thread %s to phys page %d\n", 
+			vpage, currentThread->getName(), pageTable[vpage].physicalPage);
+	pageTable[vpage].valid = true;
+	pageTable[vpage].readOnly = false;
+	pageTable[vpage].use = false;
 }
 
 #endif
@@ -176,7 +203,9 @@ AddrSpace::~AddrSpace()
 	// return the pages we were using
 	for (unsigned int i = 0; i < numPages; i++) {
 		if (pageTable[i].physicalPage < NumPhysPages) {
-			pageMap->Clear(pageTable[i].physicalPage);
+			if (pageTable[i].physicalPage >= 0) {
+				pageMap->Clear(pageTable[i].physicalPage);
+			}
 		}
 	}
 	delete pageTable;
@@ -334,29 +363,75 @@ void AddrSpace::LoadPage(int vAddr) {
 	// check physical page bitmap
 	int vPage = vAddr / PageSize;
 	int newPage;
-
-	// We need that core map that maps back from a
-	// physical page to a virtual page. I think I
-	// got this. each virtual address is specifc
-	// to the program. We need not only a map from
-	// frame number to virtual page number, but
-	// a map from the frame number to the thread as
-	// well as the corresponding virtual page number.
-
+	
+	// are there open frames?
 	if (pageMap->NumClear() <= 0) {
+		
+		// yes, find victim page
+		// get frame number, and vpn of the page for the
+		// process that holds it.
 		newPage = pageMap->GetNextVictim();
-		DEBUG('v', "memory full, selecting victim for replacement: %d\n", newPage);
+
+		// we now have the frame # that will be replaced.
+		DEBUG('v', "[VMEM] memory full, selecting %d as victim.\n", newPage);
+		
+		// we need to check the victim page's thread's pagetable
+		// what thread is that?
+		// what vpn is that frame to it?
+		Thread* victimThread = pageMap->curThreads[newPage];
+		int victimVPage = pageMap->vPage[newPage];
+		pageMap->curThreads[newPage] = currentThread;
+		pageMap->vPage[newPage] = vPage;
+
+		DEBUG('v', "[VMEM] got victim thread, victim vpn %d\n", victimVPage);
+
+		// is victim page dirty?
+		if (victimThread->space->pageTable[victimVPage].dirty) {
+			// yes, store it.
+			DEBUG('r', "[VMEM] victim page %d is dirty, saving to swap\n", victimVPage);
+			victimThread->space->SaveToSwap(victimVPage);
+			victimThread->space->pageTable[victimVPage].physicalPage = IN_SWAP;	
+		} else {
+			// no. just mark it as not loaded
+			DEBUG('r', "[VMEM] victim page %d is not dirty\n", victimVPage);
+			victimThread->space->pageTable[victimVPage].physicalPage = NOT_LOADED;
+		}
+		victimThread->space->pageTable[victimVPage].valid = false;
+
 	} else {
-		// else grab first open one
-		newPage = pageMap->Find();
-		DEBUG('v', "going to load page into main mem frame: %d\n", newPage);
+		// no, grab first open one and set intime, curthread, and 
+		// the vpn that we're using for that frame.
+		newPage = pageMap->Find(vPage);
+		DEBUG('v', "[VMEM] loading into frame %d\n", newPage);
 	}
 
-	// set frame number
-	pageTable[vPage].physicalPage = newPage;
+	if (pageTable[vPage].physicalPage == IN_SWAP) {
+		DEBUG('v', "[VMEM] Virtual page stored in swap.\n");
+		pageTable[vPage].physicalPage = newPage;
+		GetFromSwap(vPage);
+	} else if (pageTable[vPage].physicalPage == NOT_LOADED) {
+		DEBUG('v', "[VMEM] Virtual page not loaded.\n");
+		pageTable[vPage].physicalPage = newPage;
+		LoadPageFromExecutable(vPage);
+	} else {
+		printf("its: %d\n", pageTable[vPage].physicalPage);
+		ASSERT(false); // shouldn't happen
+	}
 	
+	// mark page table entry as valid
+	pageTable[vPage].valid = TRUE;
+	DEBUG('v', "[VMEM] vPage %d now loaded in phys frame %d\n", vPage, newPage);
+}
+
+void AddrSpace::InvalidatePage(int vpn) {
+	DEBUG('v', "[VMEM] invalidating virt page %d\n", vpn);
+	this->pageTable[vpn].valid = false;
+}
+
+void AddrSpace::LoadPageFromExecutable(int vPage) {
 	int startAddr = vPage * PageSize;
 	int addr;
+
 	for (int i = 0; i < PageSize; i++) {
 		addr = startAddr + i;
 		if (addr >= noffH.code.virtualAddr &&
@@ -367,8 +442,4 @@ void AddrSpace::LoadPage(int vAddr) {
 			LoadMem(addr, noffH.initData.inFileAddr + (startAddr - noffH.initData.virtualAddr + i), 1);
 		}
 	}
-
-	// mark page table entry as valid
-	pageTable[vPage].valid = TRUE;
-	DEBUG('v', "vpage %d should now be loaded in phys frame %d..\n", vPage, newPage);
 }

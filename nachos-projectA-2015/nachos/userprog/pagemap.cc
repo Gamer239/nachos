@@ -20,6 +20,11 @@ PageMap::PageMap(int numpages) :
 	for (int i = 0; i < NumPhysPages; i++) {
 		inTime[i] = -1;
 	}
+	vPage = new int[NumPhysPages];
+	for (int i = 0; i < NumPhysPages; i++) {
+		vPage[i] = -1;
+	}
+	curThreads = new Thread*[NumPhysPages];
 }
 
 void PageMap::setInTime(int page, int time) {
@@ -31,26 +36,48 @@ void PageMap::clearTime(int page) {
 }
 
 void PageMap::Clear(int which) {
-	inTime[which] = -1;
 	BitMap::Clear(which);
+	inTime[which] = -1;
+	curThreads[which] = NULL;
+	vPage[which] = -1;
 }
 
-int PageMap::Find() {
+int PageMap::Find(int vpn) {
 	int bit = BitMap::Find();
 	inTime[bit] = stats->totalTicks;
+	curThreads[bit] = currentThread;
+	vPage[bit] = vpn; 
 	return bit;
 }
 
 int PageMap::GetNextVictim() {
-
+	unsigned long long oldestTime = ULLONG_MAX;
+	unsigned long long secondTime = ULLONG_MAX;
 	int oldest = 0;
+	int second = 0;
 	for (int i = 0; i < NumPhysPages; i++) {
-		if (inTime[i] < inTime[oldest]) {
-			oldest = i;
-		}
+		if (inTime[i] < secondTime) {
+			if (inTime[i] < oldestTime) {
+				secondTime = oldestTime;
+				second = oldest;
+				oldestTime = inTime[i];
+				oldest = i;	
+			} else {
+				secondTime = inTime[i];
+				second = i;
+			}
+		}	
 	}
-	Mark(oldest);
+	ASSERT(oldest >= 0);
+	/*
+	if (oldest == curFrame) {
+		DEBUG('v', "oldest frame is the one were running off of right now :)\n");
+		oldest = second;
+	}
+	*/
+	// Mark(oldest);
 	inTime[oldest] = stats->totalTicks;
+	// curThreads[oldest]->space->InvalidatePage(oldest);
 	return oldest;
 }
 #endif
