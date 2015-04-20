@@ -130,6 +130,14 @@ Yield:
 	j	$31
 	.end Yield
 
+	.globl CheckPoint
+	.ent	CheckPoint
+CheckPoint:
+	addiu $2,$0,SC_Checkpoint
+	syscall
+	j	$31
+	.end CheckPoint
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main
