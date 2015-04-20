@@ -103,13 +103,6 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 			numPages, size);
 	/*
 	printf("Current status of pageMap before allocate:\n");
-	for (i = 0; i < NumPhysPages; i++) {
-		printf("%c%c", pageMap->Test(i) ? 'X' : 'O', (i != 0 && i % 10 == 0) ? '\n' : ' ');
-	}
-	printf("\n");
-	*/
-
-	printf("Current status of pageMap before allocate:\n");
 	i = 0;
 	while (i < NumPhysPages) {
 		if (i % 8 == 0) printf("\n");
@@ -117,7 +110,7 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 		i++;
 	}
 	printf("\n\n");
-
+*/
 
 	// first, set up the translation
 	pageTable = new TranslationEntry[numPages];
@@ -136,6 +129,7 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 		}
 	}
 
+	/*
 	printf("Current status of pageMap after allocate:\n");
 	i = 0;
 	while (i < NumPhysPages) {
@@ -144,6 +138,7 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 		i++;
 	}
 	printf("\n\n");
+	*/
 	// zero out the entire address space, to zero the unitialized data segment
 	// and the stack segment
 	// bzero(machine->mainMemory, size);
