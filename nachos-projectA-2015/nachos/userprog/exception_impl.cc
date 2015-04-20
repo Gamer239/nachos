@@ -383,6 +383,7 @@ void create(char* filename) {
 	ReadString((int) filename, buf);
 	// a file size of zero is fine for now
 	// we'll add data once we open it
+	printf("gonna create %s\n", buf);
 	fileSystem->Create(buf, 0);
 }
 

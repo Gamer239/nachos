@@ -89,28 +89,9 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 
 	memFull = false;
 	pageMap = PageMap::GetInstance();
-	/*
-	if (numPages > (unsigned int) pageMap->NumClear()) {
-		// printf("numPages(%d) > pageMap-NumClear()(%d)", numPages, pageMap->NumClear());
-		memFull = true;
-	}		// check we're not trying
-	*/
-	// to run anything too big --
-	// at least until we have
-	// virtual memory
 
 	DEBUG('a', "Initializing address space, num pages %d, size %d\n",
 			numPages, size);
-	/*
-	printf("Current status of pageMap before allocate:\n");
-	i = 0;
-	while (i < NumPhysPages) {
-		if (i % 8 == 0) printf("\n");
-		printf("%c ", pageMap->Test(i) ? 'X' : 'O');
-		i++;
-	}
-	printf("\n\n");
-*/
 
 	// first, set up the translation
 	pageTable = new TranslationEntry[numPages];
@@ -128,29 +109,7 @@ AddrSpace::AddrSpace(OpenFile *execFile)
 			// pages to be read-only
 		}
 	}
-
-	/*
-	printf("Current status of pageMap after allocate:\n");
-	i = 0;
-	while (i < NumPhysPages) {
-		if (i % 8 == 0) printf("\n");
-		printf("%c ", pageMap->Test(i) ? 'X' : 'O');
-		i++;
-	}
-	printf("\n\n");
-	*/
-	// zero out the entire address space, to zero the unitialized data segment
-	// and the stack segment
-	// bzero(machine->mainMemory, size);
-
-	// then, copy in the code and data segments into memory
-	/*
-	if (!memFull) {
-		LoadMem(noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, executable);
-		LoadMem(noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr,
-				executable);
-	}
-	*/
+	
 }
 
 void AddrSpace::LoadMem(int addr, int fileAddr, int size) {
