@@ -17,7 +17,6 @@ extern Machine* machine;	// user program memory and registers
 extern FileSystem  *fileSystem;
 
 
->>>>>>> 4820491beb9d1e02de3629028d012140c240c35e
 
 void HandleSyscall(int type) {
 
@@ -178,8 +177,6 @@ void HandleSyscall(int type) {
 				//read the address that contains the string
 				addr = machine->ReadRegister(4);
 
-				//close the file
-				delete fileId;
 				//fetch the string
 				ReadString(addr, filename);
 

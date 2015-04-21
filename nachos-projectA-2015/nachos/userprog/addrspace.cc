@@ -246,8 +246,6 @@ bool AddrSpace::GetFull() {
 void AddrSpace::SetArguments(int argVec, char* filename) {
 	if (argVec == 0) return;
 	argc = 0;
-	char* ptr;
-	char** args = (char**) argVec;
 	char temp[128];
 	int arg_ptr;
 	
@@ -418,9 +416,9 @@ void AddrSpace::PrintPages() {
 			printf("\n");
 		//}
 	}
+}
 
-bool AddrSpace::readAddrState( OpenFile* fileId )
-{
+bool AddrSpace::readAddrState( OpenFile* fileId ) {
 	char value;
 	char small_buf[4];
 	int result = 0;
