@@ -23,7 +23,13 @@ main()
 	* This is a basic checkpoint test to a file.
 	*
 	*/
-	int res = CheckPoint("test_file");
+	char* text = "test_file";
+	char buffer[256];
+	int res = 0;
+	CheckPoint(text);
+	char* num = itoa(res);
+	Write( num, strlen(num), ConsoleOutput );
+	//CheckPoint(text);
 
   Exit(0);
 }

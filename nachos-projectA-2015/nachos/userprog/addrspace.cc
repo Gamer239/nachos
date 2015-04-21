@@ -471,62 +471,66 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 		//dont take a physical page if we weren't using it before
 		if (entry.valid == false)
 		{
-
-			continue;
-		}
-
-		//find an unused page
-		if (entry.physicalPage == NOT_LOADED)
-		{
-			//TODO: could we ever have a victim page that was just one that was loaded which then corrupts our system state?
-			if (pageMap->NumClear() > 0)
+			if (entry.physicalPage >= 0)
 			{
-				entry.physicalPage = pageMap->Find(entry.virtualPage);
-			}
-			else
-			{
-				// yes, find victim page
-				// get frame number, and vpn of the page for the
-				// process that holds it.
-				entry.physicalPage = pageMap->GetNextVictim();
-
-				// we now have the frame # that will be replaced.
-				DEBUG('v', "[VMEM] memory full, selecting %d as victim.\n", entry.physicalPage);
-
-				// we need to check the victim page's thread's pagetable
-				// what thread is that?
-				// what vpn is that frame to it?
-				Thread* victimThread = pageMap->curThreads[entry.physicalPage];
-				int victimVPage = pageMap->vPage[entry.physicalPage];
-				pageMap->curThreads[entry.physicalPage] = currentThread;
-				pageMap->vPage[entry.physicalPage] = entry.virtualPage;
-
-				DEBUG('v', "[VMEM] got victim thread, victim vpn %d\n", victimVPage);
-
-				// is victim page dirty?
-				if (victimThread->space->pageTable[victimVPage].dirty) {
-					// yes, store it.
-					DEBUG('r', "[VMEM] victim page %d is dirty, saving to swap\n", victimVPage);
-					victimThread->space->SaveToSwap(victimVPage);
-					victimThread->space->pageTable[victimVPage].physicalPage = IN_SWAP;
-				} else {
-					// no. just mark it as not loaded
-					DEBUG('r', "[VMEM] victim page %d is not dirty\n", victimVPage);
-					victimThread->space->pageTable[victimVPage].physicalPage = NOT_LOADED;
-				}
-				victimThread->space->pageTable[victimVPage].valid = false;
+				pageMap->Clear(entry.physicalPage);
 			}
 		}
-		//its in swap
-		else if ( entry.physicalPage == IN_SWAP )
-		{
-			GetFromSwap(entry.virtualPage);
-		}
-		//TODO: Don't assume that it's valid if its not loaded or in swap
 		else
 		{
-			//its loaded for us let's just replace the data with our checkpoint
-			//TODO: we shouldn't need to do anything here for now
+			//find an unused page
+			if (entry.physicalPage == NOT_LOADED)
+			{
+				//TODO: could we ever have a victim page that was just one that was loaded which then corrupts our system state?
+				if (pageMap->NumClear() > 0)
+				{
+					entry.physicalPage = pageMap->Find(entry.virtualPage);
+				}
+				else
+				{
+					// yes, find victim page
+					// get frame number, and vpn of the page for the
+					// process that holds it.
+					entry.physicalPage = pageMap->GetNextVictim();
+
+					// we now have the frame # that will be replaced.
+					DEBUG('v', "[VMEM] memory full, selecting %d as victim.\n", entry.physicalPage);
+
+					// we need to check the victim page's thread's pagetable
+					// what thread is that?
+					// what vpn is that frame to it?
+					Thread* victimThread = pageMap->curThreads[entry.physicalPage];
+					int victimVPage = pageMap->vPage[entry.physicalPage];
+					pageMap->curThreads[entry.physicalPage] = currentThread;
+					pageMap->vPage[entry.physicalPage] = entry.virtualPage;
+
+					DEBUG('v', "[VMEM] got victim thread, victim vpn %d\n", victimVPage);
+
+					// is victim page dirty?
+					if (victimThread->space->pageTable[victimVPage].dirty) {
+						// yes, store it.
+						DEBUG('r', "[VMEM] victim page %d is dirty, saving to swap\n", victimVPage);
+						victimThread->space->SaveToSwap(victimVPage);
+						victimThread->space->pageTable[victimVPage].physicalPage = IN_SWAP;
+					} else {
+						// no. just mark it as not loaded
+						DEBUG('r', "[VMEM] victim page %d is not dirty\n", victimVPage);
+						victimThread->space->pageTable[victimVPage].physicalPage = NOT_LOADED;
+					}
+					victimThread->space->pageTable[victimVPage].valid = false;
+				}
+			}
+			//its in swap
+			else if ( entry.physicalPage == IN_SWAP )
+			{
+				GetFromSwap(entry.virtualPage);
+			}
+			//TODO: Don't assume that it's valid if its not loaded or in swap
+			else
+			{
+				//its loaded for us let's just replace the data with our checkpoint
+				//TODO: we shouldn't need to do anything here for now
+			}
 		}
 
 		//save the current info
