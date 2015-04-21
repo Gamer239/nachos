@@ -49,6 +49,7 @@
 #ifdef CHANGED
 #include <map>
 #include "syscall.h"
+#include "../userprog/exception_utils.h"
 #endif
 #endif
 
@@ -131,6 +132,7 @@ class Thread {
 	void setPriority(int priority);
 	int GetId();
 	void WaitOnReturn();
+	bool writeThreadContents(OpenFile* fileId);
 #endif
 
   private:

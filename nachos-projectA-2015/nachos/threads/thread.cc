@@ -379,4 +379,74 @@ void Thread::WaitOnReturn() {
 	// printf("[%s] About to P on dis sem\n", name);
 	joinSem->P();
 }
+
+bool Thread::writeThreadContents(OpenFile* fileId)
+{
+	char small_buf[4];
+	int result = 0;
+
+	//stacktop
+	intToChar((int)stackTop, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result <= 0 )
+	{
+		return false;
+	}
+
+	//machine registers
+	for (int i = 0; i < MachineStateSize; i++)
+	{
+		intToChar(machineState[i], small_buf);
+		result = fileId->Write(small_buf, 4);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+	}
+
+	//thread priority
+	intToChar(threadPriority, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result <= 0 )
+	{
+		return false;
+	}
+
+	//stack
+	intToChar((int)stack, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result <= 0 )
+	{
+		return false;
+	}
+
+	//name
+	for ( int i = 0; i < 64; i++ )
+	{
+		result = fileId->Write(&name[i], 1);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+	}
+
+	//user registers
+	for (int i = 0; i < NumTotalRegs; i++)
+	{
+		intToChar(userRegisters[i], small_buf);
+		result = fileId->Write(small_buf, 4);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+	}
+
+	//write the current address space state
+	if (!space->writeAddrState(fileId))
+	{
+		return false;
+	}
+
+	return true;
+}
 #endif

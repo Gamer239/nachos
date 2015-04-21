@@ -32,6 +32,23 @@ void WriteString(int addr, char* buf, int size) {
 		UserTranslate::WriteMem(addr + i, 1, (int) buf);
 	} while (i++ < size);
 }
+void intToChar(int value, char* buf)
+{
+	buf[0] = ( value & 0xFF000000 ) >> 24;
+	buf[1] = ( value & 0x00FF0000 ) >> 16;
+	buf[2] = ( value & 0x0000FF00 ) >> 8;
+	buf[3] = ( value & 0x000000FF );
+}
 
+int charToInt( char* buf )
+{
+	int result = 0;
+	int num1 = 0;
+	int num2 = 0;
+	int num3 = 0;
+	int num4 = 0;
+
+	return result;
+}
 
 #endif

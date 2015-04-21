@@ -397,3 +397,89 @@ void AddrSpace::LoadPageFromExecutable(int vPage) {
 		}
 	}
 }
+
+bool AddrSpace::readAddrState( OpenFile* fileId )
+{
+	char value;
+	char small_buf[4];
+	int result = 0;
+
+	return true;
+}
+
+bool AddrSpace::writeAddrState( OpenFile* fileId )
+{
+	char value;
+	char small_buf[4];
+	int result = 0;
+
+	//write the number of pages that we have to the file
+	intToChar(numPages, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result <= 0 )
+	{
+		return false;
+	}
+
+	for ( int i = 0; i < numPages; i++ )
+	{
+		TranslationEntry entry = pageTable[i];
+
+		//write the dirty bit
+		value = entry.dirty;
+		result = fileId->Write(&value, 1);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the physical page number
+		intToChar(entry.physicalPage, small_buf);
+		result = fileId->Write(small_buf, 4);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the readOnly status
+		value = entry.readOnly;
+		result = fileId->Write(&value, 1);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the usebool
+		value = entry.use;
+		result = fileId->Write(&value, 1);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the valid bit
+		value = entry.valid;
+		result = fileId->Write(&value, 1);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the virtualpage number
+		intToChar(entry.virtualPage, small_buf);
+		result = fileId->Write(small_buf, 4);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+		//write the contents of the page to the file
+		result = fileId->Write(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
+		if ( result <= 0 )
+		{
+			return false;
+		}
+
+	}
+	return true;
+}
