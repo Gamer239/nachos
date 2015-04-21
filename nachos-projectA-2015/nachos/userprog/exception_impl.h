@@ -13,6 +13,7 @@ void create(char* filename);
 void HandleSyscall(int type);
 int read(int addr, int size, OpenFileId mapped_id);
 int write(int addr, int size, OpenFileId mapped_id);
+int checkpoint(char* filename);
 
 #endif
 #endif

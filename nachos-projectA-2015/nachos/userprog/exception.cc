@@ -128,7 +128,7 @@ void ExceptionHandler(ExceptionType which) {
 		machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
 		machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 	}
-	// interrupt->SetLevel(oldLevel);
+	//interrupt->SetLevel(oldLevel);
 }
 
 #endif

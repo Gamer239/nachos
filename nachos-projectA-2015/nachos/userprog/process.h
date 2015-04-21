@@ -6,6 +6,7 @@
 #include "thread.h"
 #include <map>
 //TODO: we should probably have some overarching comment at least to give some context
+class Thread;
 class Process {
 
 	public:

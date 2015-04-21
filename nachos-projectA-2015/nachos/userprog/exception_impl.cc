@@ -1,11 +1,23 @@
+
+#ifndef CHANGED
+#define CHANGED
+#endif
 #ifdef CHANGED
 #include "exception_impl.h"
 #include <map>
+#include "../machine/machine.h"
 #include "process.h"
-#include "thread.h"
-#include "system.h"
+#include "../threads/thread.h"
+#include "../threads/system.h"
 #include "exception_utils.h"
-#include "synchconsole.h"
+#include "user_translate.h"
+#include "addrspace.h"
+
+extern Machine* machine;	// user program memory and registers
+extern FileSystem  *fileSystem;
+
+
+>>>>>>> 4820491beb9d1e02de3629028d012140c240c35e
 
 void HandleSyscall(int type) {
 
@@ -163,34 +175,19 @@ void HandleSyscall(int type) {
 		case SC_Checkpoint:
 			DEBUG('s', "Call to Syscall Checkpoint (SC_Checkpoint).\n");
 			{
-				//create and open the file
+				//read the address that contains the string
 				addr = machine->ReadRegister(4);
-				ReadString(addr, filename);
-				//printf("trying to open %s\n", filename);
-				fileSystem->Create(filename, 0);
-				//printf("created\n");
-				OpenFile* fileId = fileSystem->Open(filename);
-				//printf("opened\n");
-
-				//save the checkpoint - lets write things in order of thread.h
-				//write the stack pointer
-				//fileId->Write((char*)&currentThread->stackTop, sizeof(currentThread->stackTop));
-
-				//write the machineState variables
-				for (i = 0; i < MachineStateSize; i++)
-				{
-					int value = machine->ReadRegister(i);
-					char small_buf[4];
-					small_buf[0] = ( value & 0xFF000000 ) >> 24;
-					small_buf[1] = ( value & 0x00FF0000 ) >> 16;
-					small_buf[2] = ( value & 0x0000FF00 ) >> 8;
-					small_buf[3] = ( value & 0x000000FF );
-					fileId->Write(small_buf, 4);
-					printf("wrote byte %d value %x \n", i, value);
-				}
 
 				//close the file
 				delete fileId;
+				//fetch the string
+				ReadString(addr, filename);
+
+				//run the checkpoint code
+				int ret = checkpoint( filename );
+
+				//write the return
+				machine->WriteRegister(2, ret);
 			}
 			break;
 
@@ -402,4 +399,54 @@ int read(int addr, int size, OpenFileId mapped_id) {
    return wrote;
    }
    */
+int checkpoint(char* filename)
+{
+	bool res = true;
+	bool exists = true;
+	OpenFile* fileId = fileSystem->Open(filename);
+
+	if (strlen(filename) <= 0)
+	{
+		printf("filename <= 0 %s\n", filename);
+		return -1;
+	}
+
+	if ( fileId == NULL )
+	{
+		//the file doesn't exist create the checkpoint
+		printf("the file doesn't exist\n");
+		fileSystem->Create(filename, 0);
+		OpenFile* fileId = fileSystem->Open(filename);
+		res = currentThread->writeThreadContents( fileId );
+		exists = false;
+	}
+	else
+	{
+		//the file exists, load the snapshot
+		printf("the file exists\n");
+
+		//TODO: when we read on old checkpoint do we need to update the PC since we need to move past this instruction?
+		res = currentThread->readThreadContents( fileId );
+	}
+
+	//close the file
+	if ( fileId != NULL )
+	{
+		delete fileId;
+	}
+
+	if ( res == false )
+	{
+		return -1;
+	}
+	else if ( exists == true )
+	{
+		return 1;
+	}
+
+
+
+	return 0;
+}
+
 #endif

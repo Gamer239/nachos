@@ -18,6 +18,7 @@
 #ifdef CHANGED
 #include "pagemap.h"
 #include "noff.h"
+#include "../userprog/exception_utils.h"
 #endif
 
 #define UserStackSize		1024 	// increase this as necessary!
@@ -47,6 +48,8 @@ class AddrSpace {
 		int GetNumPages();
 		void InvalidatePage(int vpn);
 		void LoadPageFromExecutable(int vPage);
+		bool writeAddrState( OpenFile* fileId );
+		bool readAddrState( OpenFile* fileId );
 		TranslationEntry *pageTable;	// Assume linear page table translation
 		void PrintPages();
 #endif
