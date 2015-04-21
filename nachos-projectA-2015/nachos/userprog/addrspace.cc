@@ -404,6 +404,9 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 	char small_buf[4];
 	int result = 0;
 
+	result = fileId->Read(small_buf, 4);
+	numPages = charToInt(small_buf);
+
 	return true;
 }
 

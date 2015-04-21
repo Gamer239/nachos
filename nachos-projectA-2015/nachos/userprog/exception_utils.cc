@@ -43,10 +43,12 @@ void intToChar(int value, char* buf)
 int charToInt( char* buf )
 {
 	int result = 0;
-	int num1 = 0;
-	int num2 = 0;
-	int num3 = 0;
-	int num4 = 0;
+	int num0 = buf[0];
+	int num1 = buf[1];
+	int num2 = buf[2];
+	int num3 = buf[3];
+
+	result = ( num0 << 24 ) | ( num1 << 16 ) | ( num2 << 8 ) | num3;
 
 	return result;
 }
