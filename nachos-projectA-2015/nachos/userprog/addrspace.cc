@@ -404,8 +404,60 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 	char small_buf[4];
 	int result = 0;
 
+	//read in the number of pages that we will need to add
 	result = fileId->Read(small_buf, 4);
-	numPages = charToInt(small_buf);
+	int newNumPages = charToInt(small_buf);
+
+	//we should have already instantiated our address space with the code
+	//so the number of pages should already be mapped and now we can load
+	//our state back into place
+	if (newNumPages <= 0 || numPages != newNumPages)
+	{
+		printf("ERROR - newNumPages <=0 || numPages != newNumPage\n");
+		return false;
+	}
+
+	//load each page and check that there is still free space left
+	for ( int i = 0; i < numPages && pageMap->NumClear() > 0; i++ )
+	{
+		//load the current info
+		TranslationEntry entry = pageTable[i];
+
+
+		//find an unused page
+		if (entry.physicalPage == NOT_LOADED)
+		{
+
+		}
+		//its in swap
+		else if ( entry.physicalPage == IN_SWAP )
+		{
+
+		}
+		//TODO: Don't assume that it's valid if its not loaded or in swap
+		else
+		{
+			//its loaded for us let's just replace the data with our checkpoint
+		}
+
+		//save the current info
+		pageTable[i] = entry;
+
+		//read the contents of the page to the file
+		result = fileId->Read(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
+		if ( result <= 0 )
+		{
+			printf("ERROR - read the contents of the page to the file\n");
+			return false;
+		}
+	}
+
+	//check to make sure that we have some free pages open still
+	if ( pageMap->NumClear() <= 0 )
+	{
+		printf("ERROR - check to make sure that we have some free pages open still\n");
+		return false;
+	}
 
 	return true;
 }
@@ -421,6 +473,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 	result = fileId->Write(small_buf, 4);
 	if ( result <= 0 )
 	{
+		printf("ERROR - write the number of pages that we have to the file\n");
 		return false;
 	}
 
@@ -433,14 +486,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(&value, 1);
 		if ( result <= 0 )
 		{
-			return false;
-		}
-
-		//write the physical page number
-		intToChar(entry.physicalPage, small_buf);
-		result = fileId->Write(small_buf, 4);
-		if ( result <= 0 )
-		{
+			printf("ERROR - write the dirty bit\n");
 			return false;
 		}
 
@@ -449,6 +495,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(&value, 1);
 		if ( result <= 0 )
 		{
+			printf("ERROR - write the readonly status\n");
 			return false;
 		}
 
@@ -457,6 +504,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(&value, 1);
 		if ( result <= 0 )
 		{
+			printf("ERROR - write the usebool\n");
 			return false;
 		}
 
@@ -465,6 +513,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(&value, 1);
 		if ( result <= 0 )
 		{
+			printf("ERROR - write the valid bit\n");
 			return false;
 		}
 
@@ -473,6 +522,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(small_buf, 4);
 		if ( result <= 0 )
 		{
+			printf("ERROR - write the virtualpage number\n");
 			return false;
 		}
 
@@ -480,6 +530,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		result = fileId->Write(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
 		if ( result <= 0 )
 		{
+			printf("ERROR - write the contents of the page to the file\n");
 			return false;
 		}
 
