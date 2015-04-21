@@ -387,7 +387,7 @@ bool Thread::readThreadContents(OpenFile* fileId)
 
 	//stack top
 	result = fileId->Read(small_buf, 4);
-	stackTop = charToInt(small_buf);
+	stackTop = (int*)charToInt(small_buf);
 	if ( result <= 0 )
 	{
 		printf("read stack top\n");
@@ -396,7 +396,7 @@ bool Thread::readThreadContents(OpenFile* fileId)
 
 	//stack bottom
 	result = fileId->Read(small_buf, 4);
-	stack = charToInt(small_buf);
+	stack = (int*)charToInt(small_buf);
 	if ( result <= 0 )
 	{
 		printf("read stack bottom \n");
@@ -462,7 +462,7 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	int result = 0;
 
 	//stack top
-	intToChar((int)stackTop, small_buf);
+	intToChar((int)stackTop, small_buf); //TODO: this cast is okay? I want the pointer itself
 	result = fileId->Write(small_buf, 4);
 	if ( result <= 0 )
 	{
@@ -471,7 +471,7 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	}
 
 	//stack bottom
-	intToChar((int)stack, small_buf);
+	intToChar((int)stack, small_buf); //TODO: this cast is okay?
 	result = fileId->Write(small_buf, 4);
 	if ( result <= 0 )
 	{
