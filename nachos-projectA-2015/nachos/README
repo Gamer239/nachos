@@ -2,139 +2,64 @@ Names:
 Mike Grimes
 Zach Malinowski
 
-Slip Days Used (both): 2
+Slip Days Used (both): 0
 Slip Days Left (both): 0
 
-System calls
-Create( char* name );
--This system call creates a new file if it doesnt exist.
--Returns nothing whether or not the file is created.
+== Notice ==
 
-OpenFileId Open( char* filename )
--This system call attempts to open the file.
-If it opens the file then it maps the OpenFileId to
-the internal pointer.
--Returns a positive integer on success and -1 if the file did not
-exist
+ - We were unable to get Exec arguments working 100% correctly.
+   Usually a program that requires arguments will not always fail,
+   but the strings that are read are not what is expected. Maybe
+   this could be thought of as a feature. A random number generator,
+   perhaps.
+ - As a result of the previous point, the checkpoint syscall does not
+   work. While it correctly creates a file to store the state of a
+   running process, it is unable to load the stack back into the
+   running nachos system correctly.
 
-Write( char* buffer, int size, OpenFileId id )
--This system call attempts to write up to size bytes from the
-buffer to the id. This system call will check to see if the id is
-valid and then write one byte at a time to the id and check to see if
-each write passed or failed.
- -Returns nothing.
+== Virtual Memory implementation details ==
 
- Read( char* buffer, int size, OpenFileId id )
- -This system call attempts to read up to size bytes from the
- id and write them into the buffer. This system call will check to see
- if the id is valid and then write one byte at a time to the buffer
- and check to see if each read passed or failed.
- -Returns nothing.
+ - On a page fault, the system checks whether or not there is an open
+   frame in the physical memory by consulting the PageMap (which is
+   a wrapper around the BitMap class). If there are open frames, the
+   page that was originally trying to be accessed will be loaded into
+   the first open frame.
+ - If there are no open frames, a victim frame is selected in a FIFO
+   fashion. FIFO was chosen because it was super easy to implement, and
+   required almost no extra code (only an 'inTime' field needed to be
+   added to the TranslationEntry class, and a few lines to find the
+   min).
+ - Once the victim frame is selected, the thread that currently has a
+   virtual page mapped to that frame is told either to store the page
+   in a swap file if the dirty bit is set, or just invalidate the
+   entry in the pageTable otherwise.
+ - The swap file is merely a temporary file (put int "/tmp/swap.%d")
+   where %d is the integer value of the pointer of the AddrSpace object.
+ - The physicalPage mapping of a TranslationEntry in an address spaces'
+   pageTable can contain 1 of three types of values. Two of these types
+   are #defines IN_SWAP, and NOT_LOADED. These obviously refer to the page
+   either being stored in a swap file, or not loaded (stored in the
+   executable file). Otherwise, the physicalPage field will hold a valid,
+   nonnegative integer, denoting the physical frame that the virtual
+   page maps to.
+ - When an address space is loading a page into memory (after a page
+   fault has occured on an attempted access to that page) The address
+   space checks whether or not the page is in either the NOT_LOADED, 
+   or is IN_SWAP states. If the page has not been loaded, the page will
+   be loaded from the executable file. Otherwise, it is brought back
+   in from the swap file.
+ - We wanted to attempt an LRU implementation for page-swapping, but
+   we were unable to find a place where we could modify the code that
+   allowed us to tell when pages are accessed.
 
- Close( OpenFileId id )
- -This system call attempts to close the id if it is currently open
- for the currently running program. If the id is not valid
- then the close call is ignorned.
- -Returns nothing.
+== Tests ==
 
- Exit( int status )
- - Exits the current running process, first checking if a parent process
- exists and is waiting on the current process. If a parent is waiting,
- the parent is released, and the return value of this process is stored
- where the parent process can access it.
- -Returns nothing
-
- Exec( char* name )
- - Starts a new process running the code in the filename 'name'. A new
- thread and address space are created, and the thread is forked. Housekeeping
- of process ids, children, and parents is also done.
- -Returns spaceid (pid) of the spawned process.
-
- Join( SpaceId id )
- - If the process with the SpaceId 'id' is a child of the process who calls
- join, the process will wait until the child process finishes. If the child
- process finishes before Join was called, the return value of the child is
- retreived and returned.
- - Returns the return value of the joined process
-
-
- Exceptions
- - Only exception that is handled extensively is SyscallException, in which
- each type is handled by a specific syscall method. Otherwise, all other
- exceptions print a warning to standard out and exit the currently running
- process. OverflowException only prints a warning, and does not exit the
- program.
-
- Scheduling Algorithms
- - No changes to the scheduling algorithm have been made from the previous
- program, this means a priority based algorithm, with round-robin preemption
- is implemented. After a set number of ticks, the scheduler will yield the
- current running process and re-insert it into the queue, based on it priority.
-
- SynchConsole
- SynchConsole( char* readFile, char* writeFile )
- -This function initializes the console which in the background
- opens up the machine's console. It then creates its own semaphores
- to handle waiting. If readFile and WriteFile are NULL then they
- get set as ConsoleInput and ConsoleOutput
- -Returns nothing.
-
- ~SynchConsole
- -This function destroys the SynchConsole
- -Returns nothing.
-
- ConsoleReadPoll( int c )
- -This function is called by the parent when there is a char available
- -Returns nothing
-
- ConsoleWriteDone( int c )
- -This function is called by the parent when the write finishes
- -Return nothing.
-
- CheckCharAvailDone( )
- -This function releases a waiting "get" call.
- Returns nothing.
-
- WriteDoneDone( )
- -This function releases a waiting "put" call.
- Returns nothing.
-
- GetChar( )
- -This function asks the console for a character and then locks
- itself until a char the interrupt of a char being available
- releases it.
- -Returns a char if one was found or EOF if it was the end of the file
-
- PutChar( )
- -This function puts a char into the console and then locks
- itself until the write is complete and it gets released
- by the interrupt calling the WriteDoneDone function.
- -Returns nothing.
-
- Tests
- - test/retadd: spawns 5 child processes each with a different return value in
- the range 1-5, joins them, then prints the sum of their return values. Should print
- and return 15.
- - test/halt: altered to test Exit() and start testing for args
- - test/shell: modified shell to be more robust. Will quit when it receives "exit",
- otherwise, allows the spawning of child processes by simply typing the filename
- into the prompt.
- - test/create: tests creation of file
-
- -Read Write Test
-Purppose-To test reading and writing from a console and the file
-system and changing the buffer sizes to ensure that the system works.
--Method:
------Each subtest, creates a file, writes a string to the file,
------closes the file, opens the file, reads the file, writes the file
------to the console and then closes the file.
--The test then uses the procedure about and changes the read and
-write buffer sizes for each sub test to ensure that the system
-stops at the appropiate time and doesnt clobber other memory.
--Procedure
--Run
--nachos -x test/read_write_test
--Then check to make sure that the testString outputted 4 times.
-
--Expected Results
---The given testString should output to the console 4 times
+ - We didn't add any of our own tests, other than modifying a few
+   previous tests to try out checkpoint and exec arguments.
+ - We ran some of the tests in the /classes/.../nachos/ folder, though.
+   you can run test/shell, and then run other programs from that.
+ - I think a good demonstration of the page-swapping capabilities
+   is to lower the # of physical pages in machine.h and also lower
+   the sectorsize, then open a number of test/shell's inside of each
+   other, and run some other programs from that (matmult or retadd)
+ 
