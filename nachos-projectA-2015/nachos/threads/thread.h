@@ -133,6 +133,7 @@ class Thread {
 	int GetId();
 	void WaitOnReturn();
 	bool writeThreadContents(OpenFile* fileId);
+	bool readThreadContents(OpenFile* fileId);
 #endif
 
   private:

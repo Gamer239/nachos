@@ -380,16 +380,102 @@ void Thread::WaitOnReturn() {
 	joinSem->P();
 }
 
+bool Thread::readThreadContents(OpenFile* fileId)
+{
+	char small_buf[4];
+	int result = 0;
+
+	//stack top
+	result = fileId->Read(small_buf, 4);
+	stackTop = charToInt(small_buf);
+	if ( result <= 0 )
+	{
+		printf("read stack top\n");
+		return false;
+	}
+
+	//stack bottom
+	result = fileId->Read(small_buf, 4);
+	stack = charToInt(small_buf);
+	if ( result <= 0 )
+	{
+		printf("read stack bottom \n");
+		return false;
+	}
+
+	//machine registers
+	for (int i = 0; i < MachineStateSize; i++)
+	{
+		result = fileId->Read(small_buf, 4);
+		machineState[i] = charToInt(small_buf);
+		if ( result <= 0 )
+		{
+			printf("read machine registers\n");
+			return false;
+		}
+	}
+
+	//thread priority
+	result = fileId->Read(small_buf, 4);
+	threadPriority = charToInt(small_buf);
+	if ( result <= 0 )
+	{
+		printf("read thread priority\n");
+		return false;
+	}
+
+	//name
+	result = fileId->Read(name, 64);
+	if ( result <= 0 )
+	{
+		printf("read name\n");
+		return false;
+	}
+
+	//user registers
+	for (int i = 0; i < NumTotalRegs; i++)
+	{
+		result = fileId->Read(small_buf, 4);
+		userRegisters[i] = charToInt(small_buf);
+		if ( result <= 0 )
+		{
+			printf("read user registers\n");
+			return false;
+		}
+	}
+
+	//write the current address space state
+	if (!space->readAddrState(fileId))
+	{
+		printf("read the current address space state\n");
+		return false;
+	}
+
+	//TODO:read the stacks contents
+
+	return true;
+}
+
 bool Thread::writeThreadContents(OpenFile* fileId)
 {
 	char small_buf[4];
 	int result = 0;
 
-	//stacktop
+	//stack top
 	intToChar((int)stackTop, small_buf);
 	result = fileId->Write(small_buf, 4);
 	if ( result <= 0 )
 	{
+		printf("write stack top\n");
+		return false;
+	}
+
+	//stack bottom
+	intToChar((int)stack, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result <= 0 )
+	{
+		printf("write stack bottom \n");
 		return false;
 	}
 
@@ -400,6 +486,7 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 		result = fileId->Write(small_buf, 4);
 		if ( result <= 0 )
 		{
+			printf("write machine registers\n");
 			return false;
 		}
 	}
@@ -409,25 +496,16 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	result = fileId->Write(small_buf, 4);
 	if ( result <= 0 )
 	{
-		return false;
-	}
-
-	//stack
-	intToChar((int)stack, small_buf);
-	result = fileId->Write(small_buf, 4);
-	if ( result <= 0 )
-	{
+		printf("write thread priority\n");
 		return false;
 	}
 
 	//name
-	for ( int i = 0; i < 64; i++ )
+	result = fileId->Write(name, 64);
+	if ( result <= 0 )
 	{
-		result = fileId->Write(&name[i], 1);
-		if ( result <= 0 )
-		{
-			return false;
-		}
+		printf("write name\n");
+		return false;
 	}
 
 	//user registers
@@ -437,6 +515,7 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 		result = fileId->Write(small_buf, 4);
 		if ( result <= 0 )
 		{
+			printf("write user registers\n");
 			return false;
 		}
 	}
@@ -444,8 +523,11 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	//write the current address space state
 	if (!space->writeAddrState(fileId))
 	{
+		printf("write the current address space state\n");
 		return false;
 	}
+
+	//TODO: write the stack's contents
 
 	return true;
 }
