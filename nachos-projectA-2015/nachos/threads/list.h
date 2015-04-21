@@ -29,7 +29,6 @@ class ListElement {
      ListElement(void *itemPtr, long long unsigned sortKey);
 
      ListElement *next;		// next element on list,
-	 ListElement *prev;
 				// NULL if this is the last
      long long unsigned key;    // priority, for a sorted list
      void *item; 	    	// pointer to item on the list
@@ -46,12 +45,10 @@ class List {
     List();			// initialize the list
     ~List();			// de-allocate the list
 
-    ListElement* Prepend(void *item); 	// Put item at the beginning of the list
-    ListElement* Append(void *item); 	// Put item at the end of the list
+    void Prepend(void *item); 	// Put item at the beginning of the list
+    void Append(void *item); 	// Put item at the end of the list
     void *Remove(); 	 	// Take item off the front of the list
-# ifdef CHANGED
-	void *Remove(ListElement *elem); // Generic remove from middle of list
-#endif
+
     void Mapcar(VoidFunctionPtr func);	// Apply "func" to every element
 					// on the list
     bool IsEmpty();		// is the list empty?
@@ -61,11 +58,14 @@ class List {
     #endif
 
     // Routines to put/get items on/off list in order (sorted by key)
-    ListElement* SortedInsert(void *item, long long unsigned sortKey); // Put item into list
-    void* SortedRemove(long long unsigned *keyPtr);            // Remove first item from list
+    void SortedInsert(void *item, long long unsigned sortKey); // Put item into list
+    void *SortedRemove(long long unsigned *keyPtr);            // Remove first item from list
   private:
     ListElement *first;  	// Head of the list, NULL if list is empty
     ListElement *last;		// Last element of list
+    #ifdef CHANGED
+    int size;
+    #endif
 };
 
 #endif // LIST_H

@@ -70,6 +70,7 @@ void ExceptionHandler(ExceptionType which) {
 
 		case PageFaultException: 
 			{
+				printf("Page Fault - Exiting Process\n");
 				Process* currentProcess = getCurrentProcess();
 				if (machine->registers[BadVAddrReg] / PageSize >=
 						currentThread->space->GetNumPages()) {
