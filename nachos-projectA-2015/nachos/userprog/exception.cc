@@ -56,7 +56,7 @@
 
 void ExceptionHandler(ExceptionType which) {
 
-	IntStatus oldLevel = interrupt->SetLevel(IntOff); // yolo
+	//IntStatus oldLevel = interrupt->SetLevel(IntOff); // yolo
 	int type = machine->ReadRegister(2);
 	bool sysCall = false;
 
@@ -70,8 +70,7 @@ void ExceptionHandler(ExceptionType which) {
 
 		case PageFaultException: 
 			{
-				printf("Page Fault - Exiting Process\n");
-				Process* currentProcess = getCurrentProcess();
+				// Process* currentProcess = getCurrentProcess();
 				if (machine->registers[BadVAddrReg] / PageSize >=
 						currentThread->space->GetNumPages()) {
 					DEBUG('v', "[%d] Page fault: virtual address out of range: %d/%d - \
@@ -129,7 +128,7 @@ void ExceptionHandler(ExceptionType which) {
 		machine->WriteRegister(PCReg, machine->ReadRegister(PCReg) + 4);
 		machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg) + 4);
 	}
-	interrupt->SetLevel(oldLevel);
+	// interrupt->SetLevel(oldLevel);
 }
 
 #endif

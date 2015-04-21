@@ -40,7 +40,7 @@ class AddrSpace {
 		void RestoreState();		// info on a context switch
 #ifdef CHANGED
 		bool GetFull();			// so we can check if space creation failed
-		void SetArguments(int argc, char* argv[], char* filename);
+		void SetArguments(int argVec, char* filename);
 		void LoadArguments();
 		void LoadPage(int vPage);
 		void LoadMem(int addr, int fileAddr, int size);
@@ -48,6 +48,7 @@ class AddrSpace {
 		void InvalidatePage(int vpn);
 		void LoadPageFromExecutable(int vPage);
 		TranslationEntry *pageTable;	// Assume linear page table translation
+		void PrintPages();
 #endif
 
 	private:

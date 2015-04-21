@@ -18,8 +18,17 @@ main()
   args[1] = "argument2";
   args[2] = (char *)0;
 
-  kid = Exec("test/simple2",args);
+  prints("PARENT exists\n", ConsoleOutput);
+  kid = Exec("test/argkid", args);
+  prints("PARENT after exec; argkid pid is ", ConsoleOutput);
+  printd((int)kid, ConsoleOutput);
+  prints("\n", ConsoleOutput);
+
+  prints("PARENT about to Join argkid\n", ConsoleOutput);
   joinval = Join(kid);
+  prints("PARENT off Join with value of ", ConsoleOutput);
+  printd(joinval, ConsoleOutput);
+  prints("\n", ConsoleOutput);
 
   Halt();
   /* not reached */

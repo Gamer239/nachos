@@ -21,39 +21,12 @@
 // 	Run a user program.  Open the executable, load it into
 //	memory, and jump to it.
 //----------------------------------------------------------------------
-SpaceId exec(char* filename, int argc, int argv);
+SpaceId exec(char* filename, int argv);
 
 void
 StartProcess(char *filename)
 {
-	//TODO: should all of this code be removed?
-/*
-	OpenFile *executable = fileSystem->Open(filename);
-    AddrSpace *space;
-
-	printf("StartProcess(%s)\n", filename);
-
-	if (executable == NULL) {
-		printf("Unable to open file %s\n", filename);
-		return;
-	}
-    space = new AddrSpace(executable);
-    currentThread->space = space;
-
-    delete executable;			// close file
-
-    space->InitRegisters();		// set the initial register values
-    space->RestoreState();		// load page table register
-
-    machine->Run();			// jump to the user progam
-    ASSERT(FALSE);			// machine->Run never returns;
-					// the address space exits
-					// by doing the syscall "exit"
-*/
-
-	char* argv[1];
-	argv[0] = "yolo";
-	exec(filename, 1, (int) argv);
+	exec(filename, 0);
 	#endif
 }
 
@@ -83,17 +56,11 @@ void
 ConsoleTest (char *in, char *out)
 {
     char ch;
-
     console = new SynchConsole(in, out);
-    readAvail = new Semaphore("read avail", 0);
-    writeDone = new Semaphore("write done", 0);
-    printf("\nstarting the console\n");
     for (;;) {
-	//readAvail->P();		// wait for character to arrive
-	ch = console->GetChar();
-	console->PutChar(ch);	// echo it!
-	//writeDone->P() ;        // wait for write to finish
-	if (ch == 'q') return;  // if q, quit
+		ch = console->GetChar();
+		console->PutChar(ch);	// echo it!
+		if (ch == 'q') return;  // if q, quit
     }
 }
 #endif

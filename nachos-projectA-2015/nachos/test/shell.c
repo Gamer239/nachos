@@ -7,7 +7,7 @@ main()
 	SpaceId newProc;
 	OpenFileId input = ConsoleInput;
 	OpenFileId output = ConsoleOutput;
-	char prompt[2], ch, buffer[60], bytesbuf[10];
+	char prompt[2], ch, buffer[60];
 	int i, ret;
 	int bytes;
 	char *argv[1];
@@ -22,11 +22,9 @@ main()
 		i = 0;
 		do {
 			bytes = Read(&buffer[i], 1, input);
-		} while( buffer[i++] != '\n' );
-
+		} while(buffer[i++] != '\n');
 		buffer[--i] = '\0';
-		Write(bytesbuf, 2, output);
-		if(i > 0) {
+		if (i > 0) {
 			if (strcomp(buffer, "exit") == 1) {
 				Exit(0);
 			} else {

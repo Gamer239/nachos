@@ -20,7 +20,7 @@ void ReadString(int addr, char* buf) {
 	buf[0] = '\0';
 	int i = 0;
 	do {
-		UserTranslate::ReadMem(addr++, 1, (int*) &c);
+		machine->ReadMem(addr++, 1, (int*) &c);
 		sprintf(buf + strlen(buf), "%c", c);
 		i++;
 	} while (c != '\0' && i < 64);
@@ -29,7 +29,7 @@ void ReadString(int addr, char* buf) {
 void WriteString(int addr, char* buf, int size) {
 	int i = 0;
 	do {
-		UserTranslate::WriteMem(addr + i, 1, (int) buf);
+		machine->WriteMem(addr + i, 1, (int) buf);
 	} while (i++ < size);
 }
 

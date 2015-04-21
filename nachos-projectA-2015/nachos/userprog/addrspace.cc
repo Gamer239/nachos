@@ -23,6 +23,7 @@
 #endif
 #ifdef CHANGED
 #include "exception_utils.h"
+#include "exception_impl.h"
 #endif
 #ifdef HOST_SPARC
 #include <strings.h>
@@ -242,70 +243,72 @@ bool AddrSpace::GetFull() {
  * Sets the argument fields "argc" and "argv" for the this AddrSpace instance,
  * we load them into their correct places in memory in AddrSpace::LoadArguments.
  */
-/*
-void AddrSpace::SetArguments(int argc, char* argv[], char* filename) {
-
+void AddrSpace::SetArguments(int argVec, char* filename) {
+	if (argVec == 0) return;
+	argc = 0;
+	char* ptr;
+	char** args = (char**) argVec;
 	char temp[128];
-	this->argc = argc + 1;
-	this->argv = new char*[argc];
+	int arg_ptr;
+	
+	while (true) {
+		machine->ReadMem(argVec + 4 * argc, 4, &arg_ptr);
+		if (arg_ptr == 0) break;
+		else argc++;
+	}
+	argc++;
+	// printf("total of %d args\n", argc);
 
-	this->argv[0] = new char[strlen(filename) + 1];
-	strcpy(this->argv[0], filename);
+	argv = new char*[argc];
 
-	printf("set arguments, argc: %d\n", argc);
-	printf("copied filename: %s\n", this->argv[0]);
+	argv[0] = new char[strlen(filename) + 1];
+	strcpy(argv[0], filename);
 
-	for (int i = 0; i < argc; i++) {
-		printf("argv[i]: %s\n", argv[i]);
-		int arg_ptr;
-		bzero(temp, 128);
-		UserTranslate::ReadMem((int) argv + 4 * i, 4, &arg_ptr);
+	for (int i = 0; i < argc - 1; i++) {
+		machine->ReadMem(argVec + 4 * i, 4, &arg_ptr);		
 		ReadString(arg_ptr, temp);
-		this->argv[i + 1] = new char[strlen(temp) + 1];
-		strcpy(this->argv[i + 1], temp);
-		printf("got argument %d: %s\n", i, temp);
+		// printf("got temp of %s\n", temp);
+		// printf("i + 1: %d\n", i + 1);
+		argv[i + 1] = new char[strlen(temp) + 1];
+		// printf("made the thing\n");
+		strcpy(argv[i + 1], temp);
+		// printf("its this!: %s\n", argv[i + 1]);
 	}
 
 }
-*/
+
 /**
  * Should load the arguments into their correct places in memory, just before
  * the code section, so the user program can access them.
+ */
 void AddrSpace::LoadArguments(){
+	
 	int args[argc];
 	int strLen;
 
-	int sp = numPages * PageSize;
-	int cantPag = 0;
-	int tmpSize = 4 * argc;
+	int sp = machine->ReadRegister(StackReg);
 
 	for (int i = 0; i < argc; i++) {
 		strLen = strlen(argv[i]) + 1;
-		tmpSize += strLen;
-		if (tmpSize > PageSize * cantPag ){
-			cantPag += 1;
-			pageTable[numPages - cantPag].valid =  true;
-			bzero((machine->mainMemory) + (pageTable[numPages - cantPag]
-						.physicalPage * PageSize), PageSize);
-		}
-		sp = sp - strLen;
+		sp -= strLen;
 		WriteString(sp, argv[i], strLen);
 		args[i] = sp;
 	}
 
-	sp = sp - argc * 4;
-	sp = sp - sp % 4;
-	machine->WriteRegister(StackReg, sp - 16);
-	machine->WriteRegister(4, argc);
-	machine->WriteRegister(5, sp);
+	sp = sp & ~3;
 
 	for (int i = 0; i < argc; i++) {
 		machine->WriteMem(sp, 4, args[i]);
-		sp = sp + 4;
-	};
+		sp += 4;
+	}
 
+	sp -= argc * sizeof(int);
+
+	machine->WriteRegister(5, sp);
+	machine->WriteRegister(4, argc);
+	machine->WriteRegister(StackReg, sp - 4 * argc);
+	
 }
-*/
 
 int AddrSpace::GetNumPages() {
 	return numPages;
@@ -395,5 +398,24 @@ void AddrSpace::LoadPageFromExecutable(int vPage) {
 				addr < noffH.initData.virtualAddr + noffH.initData.size) {
 			LoadMem(addr, noffH.initData.inFileAddr + (startAddr - noffH.initData.virtualAddr + i), 1);
 		}
+	}
+}
+
+void AddrSpace::PrintPages() {
+	// printf("were in printpages, numpages: %d\n", numPages);
+	for (unsigned int i = 0; i < NumPhysPages; i++) {
+		// if (pageTable[i].physicalPage >= 0) {
+			printf("Page %d: ", i);
+			for (int j = 0; j < PageSize; j++) {
+				char ch = machine->mainMemory[(i * PageSize) + j];
+				if (ch < 32 || ch > 127) {
+					// ch = ' ';
+					printf("%d", (int)ch);
+				} else {
+					printf("%c", ch);
+				}
+			}
+			printf("\n");
+		//}
 	}
 }

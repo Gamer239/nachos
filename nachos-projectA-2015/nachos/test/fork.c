@@ -1,6 +1,6 @@
-/* argtest.c
+/* fork.c
  *
- * Parent in simple argument test.
+ * Parent in simple parent/child system.
  *
  */
 
@@ -12,14 +12,21 @@ main()
 
   SpaceId kid;
   int joinval;
-  char *args[3];
+  char *args[2];
 
-  args[0] = "argument1";
-  args[1] = "argument2";
-  args[2] = (char *)0;
+  prints("PARENT exists\n", ConsoleOutput);
+  args[0] = "kid";
+  args[1] = (char *)0;  
+  kid = Exec("kid", args);
+  prints("PARENT after exec; kid pid is ", ConsoleOutput);
+  printd((int)kid, ConsoleOutput);
+  prints("\n", ConsoleOutput);
 
-  kid = Exec("test/simple2",args);
+  prints("PARENT about to Join kid\n", ConsoleOutput);
   joinval = Join(kid);
+  prints("PARENT off Join with value of ", ConsoleOutput);
+  printd(joinval, ConsoleOutput);
+  prints("\n", ConsoleOutput);
 
   Halt();
   /* not reached */

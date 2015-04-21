@@ -39,7 +39,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort syscall create read_write_test retadd simple1 simple2 simple3 simple4 simple5 vmtest checkpoint_test
+all: halt shell matmult sort syscall create read_write_test retadd simple1 simple2 simple3 simple4 simple5 vmtest checkpoint_test argtest argkid
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -52,6 +52,18 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 	
+argkid.o: argkid.c
+	$(CC) $(CFLAGS) -c argkid.c
+argkid: argkid.o start.o
+	$(LD) $(LDFLAGS) start.o argkid.o -o argkid.coff
+	../bin/coff2noff argkid.coff argkid
+
+argtest.o: argtest.c
+	$(CC) $(CFLAGS) -c argtest.c
+argtest: argtest.o start.o
+	$(LD) $(LDFLAGS) start.o argtest.o -o argtest.coff
+	../bin/coff2noff argtest.coff argtest
+
 checkpoint_test.o: checkpoint_test.c
 	$(CC) $(CFLAGS) -c checkpoint_test.c
 checkpoint_test: checkpoint_test.o start.o

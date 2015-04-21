@@ -15,23 +15,23 @@ int main() {
 		switch (i) {
 
 			case 1:
-				newProc[1] = Exec("test/simple1", argv);
+				newProc[1] = Exec("test/simple2");
 				break;
 
 			case 2:
-				newProc[2] = Exec("test/simple2", argv);
+				newProc[2] = Exec("test/simple2");
 				break;
 
 			case 3:
-				newProc[3] = Exec("test/simple3", argv);
+				newProc[3] = Exec("test/simple3");
 				break;
 
 			case 4:
-				newProc[4] = Exec("test/simple4", argv);
+				newProc[4] = Exec("test/simple4");
 				break;
 
 			case 5:
-				newProc[5] = Exec("test/simple5", argv);
+				newProc[5] = Exec("test/simple5");
 				break;
 
 		}

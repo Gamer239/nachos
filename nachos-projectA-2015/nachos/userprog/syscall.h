@@ -59,7 +59,7 @@ typedef int SpaceId;
  * address space identifier
  */
 #ifdef CHANGED
-SpaceId Exec(char *name, char *args[]);
+SpaceId Exec(char *name, char* argv[]);
 #endif
 
 /* Only return once the the user program "id" has finished.

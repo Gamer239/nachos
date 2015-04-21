@@ -7,10 +7,12 @@
 #define BUFFER_SIZE 256
 
 void exit(int ret);
-SpaceId exec(char* filename, int argc, int argv);
+SpaceId exec(char* filename, int argv);
 int join(SpaceId id);
 void create(char* filename);
 void HandleSyscall(int type);
+int read(int addr, int size, OpenFileId mapped_id);
+int write(int addr, int size, OpenFileId mapped_id);
 
 #endif
 #endif

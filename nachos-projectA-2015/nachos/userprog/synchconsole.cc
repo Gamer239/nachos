@@ -43,6 +43,7 @@ SynchConsole::SynchConsole(char *readFile, char *writeFile)
   semaphore_get = new Semaphore("synch console_get", 0);
 	lock = new Lock("synch console lock");
 	console = new Console(readFile, writeFile, ConsoleReadPoll, ConsoleWriteDone, (int) this);
+	DEBUG('c', "Created SynchConsole\n");
 }
 
 //----------------------------------------------------------------------
@@ -71,7 +72,10 @@ SynchConsole::~SynchConsole()
 void
 SynchConsole::CheckCharAvailDone()
 {
+	DEBUG('c', "CheckCharAvailDone before semaphore_get->V()\n");
 	semaphore_get->V();
+	DEBUG('c', "CheckCharAvailDone after semaphore_get->V()\n");
+
 }
 
 //----------------------------------------------------------------------
@@ -84,7 +88,9 @@ SynchConsole::CheckCharAvailDone()
 void
 SynchConsole::WriteDoneDone()
 {
+	DEBUG('c', "WriteDoneDone before semaphore_put->V()\n");
 	semaphore_put->V();
+	DEBUG('c', "WriteDoneDone after semaphore_put->V()\n");
 }
 
 //----------------------------------------------------------------------
@@ -94,13 +100,17 @@ SynchConsole::WriteDoneDone()
 //----------------------------------------------------------------------
 
 char
-SynchConsole::GetChar()
-{
+SynchConsole::GetChar() {
+
+	DEBUG('c', "GetChar\n");
+	char ch;
+
 	lock->Acquire();
-	console->CheckCharAvail();
 	semaphore_get->P();
+	console->CheckCharAvail();
+	ch = console->GetChar();
 	lock->Release();
-	return console->GetChar();
+	return ch;
 }
 
 //----------------------------------------------------------------------
@@ -112,6 +122,7 @@ SynchConsole::GetChar()
 void
 SynchConsole::PutChar(char ch)
 {
+	DEBUG('c', "PutChar\n");
 	lock->Acquire();			// only one disk I/O at a time
 	console->PutChar(ch);
 	semaphore_put->P();			// wait for interrupt

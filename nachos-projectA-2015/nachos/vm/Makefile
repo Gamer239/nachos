@@ -621,7 +621,7 @@ addrspace.o: ../userprog/addrspace.cc ../threads/copyright.h \
  ../threads/list.h ../machine/stats.h ../machine/timer.h \
  ../userprog/user_translate.h ../machine/translate.h \
  ../userprog/addrspace.h ../userprog/exception_utils.h \
- ../userprog/process.h
+ ../userprog/process.h ../userprog/exception_impl.h ../userprog/syscall.h
 bitmap.o: ../userprog/bitmap.cc ../threads/copyright.h \
  ../userprog/bitmap.h ../threads/utility.h ../threads/copyright.h \
  ../threads/bool.h ../machine/sysdep.h /usr/include/stdio.h \
@@ -1238,7 +1238,8 @@ exception_impl.o: ../userprog/exception_impl.cc \
  ../filesys/openfile.h ../bin/noff.h ../userprog/syscall.h \
  ../threads/system.h ../threads/scheduler.h ../machine/interrupt.h \
  ../machine/stats.h ../machine/timer.h ../userprog/user_translate.h \
- ../machine/translate.h ../userprog/exception_utils.h
+ ../machine/translate.h ../userprog/exception_utils.h \
+ ../userprog/synchconsole.h ../machine/console.h ../threads/synch.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above

@@ -5,10 +5,11 @@
 #include "thread.h"
 #include "system.h"
 #include "exception_utils.h"
+#include "synchconsole.h"
 
 void HandleSyscall(int type) {
-	
-	int addr, argc, argv, ret, i = 0;
+
+	int addr, argv, ret, i = 0;
 	char c, buf[BUFFER_SIZE], filename[BUFFER_SIZE];
 	bzero(buf, BUFFER_SIZE);
 
@@ -16,6 +17,7 @@ void HandleSyscall(int type) {
 		case SC_Halt:
 			{
 				printf("Shutdown, initiated by user program.\n");
+				// currentThread->space->PrintPages();
 				interrupt->Halt();
 				break;
 			}
@@ -30,9 +32,8 @@ void HandleSyscall(int type) {
 				addr = machine->ReadRegister(4);
 				ReadString(addr, filename);
 				DEBUG('s', "Call to Syscall Exec (SC_Exec).\n");
-				argc = machine->ReadRegister(5);
-				argv = machine->ReadRegister(6);
-				ret = exec(filename, argc, argv);
+				argv = machine->ReadRegister(5);
+				ret = exec(filename, argv);
 				machine->WriteRegister(2, ret);
 				break;
 			}
@@ -90,44 +91,14 @@ void HandleSyscall(int type) {
 				addr = machine->ReadRegister(4);
 				int size = machine->ReadRegister(5);
 				int mapped_id = machine->ReadRegister(6);
-
-				int read = 0;
-				char buff;
-				bool write;
-				int read_count = 1;
-				//check to make sure that our file handler exists
-				if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
-				{
-					OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-					while (read < size && read_count > 0)
-					{
-						if ( mapped_id == ConsoleInput )
-						{
-							Read(ConsoleInput, &buff, 1 );
-						}
-						else if ( mapped_id != ConsoleOutput )
-						{
-							read_count = fileId->Read(&buff, 1);
-						}
-						else
-						{
-							break;
-						}
-						write = UserTranslate::WriteMem( addr + read, 1, ( int ) buff );
-						read++;
-					}
-				}
-				else
-				{
-					read = -1;
-				}
-
-				machine->WriteRegister(2, read);
+				ret = read(addr, size, mapped_id);
+				machine->WriteRegister(2, ret);
 				break;
 			}
 
 		case SC_Write:
 			{
+				DEBUG('s', "Call to Syscall Write (SC_Write).\n");
 				addr = machine->ReadRegister(4);
 				int size = (int) machine->ReadRegister(5);
 				const int mapped_id = (int) machine->ReadRegister(6);
@@ -138,32 +109,26 @@ void HandleSyscall(int type) {
 				bool read;
 				int write_count = 1;
 
-				if ( currentThread->fileHandlers->find( mapped_id ) != currentThread->fileHandlers->end( ) )
-				{
+				if (currentThread->fileHandlers->find(mapped_id) != currentThread->fileHandlers->end()) {
 					OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
-					while( wrote < size && buff != EOF && write_count > 0 )
-					{
+					while(wrote < size && buff != EOF && write_count > 0) {
 						read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
 						buff = value;
-						if ( mapped_id == ConsoleOutput )
-						{
-							WriteFile( ConsoleOutput, &buff, 1 );
-						}
-						else if ( mapped_id != ConsoleInput )
-						{
+						if (mapped_id == ConsoleOutput) {
+							WriteFile(ConsoleOutput, &buff, 1);
+						} else if (mapped_id != ConsoleInput){
 							write_count = fileId->Write(&buff, 1);
-						}
-						else
-						{
+						} else {
 							break;
 						}
 						wrote++;
 					}
-				}
-				else
-				{
+				} else {
 					wrote = -1;
 				}
+
+				// ret = write(addr, size, mapped_id);
+
 				machine->WriteRegister(2, wrote);
 
 				break;
@@ -224,8 +189,6 @@ void HandleSyscall(int type) {
 					printf("wrote byte %d value %x \n", i, value);
 				}
 
-
-
 				//close the file
 				delete fileId;
 			}
@@ -237,14 +200,12 @@ void HandleSyscall(int type) {
 			break;
 	}
 
-
-
 }
 
 void startProcess(int n) {
-	currentThread->space->RestoreState();
 	currentThread->space->InitRegisters();
-//	currentThread->space->LoadArguments();
+	currentThread->space->RestoreState();
+	currentThread->space->LoadArguments();
 	DEBUG('s', "[IN startProcess]: currentThread is: %s\n", currentThread->getName());
 	machine->Run();
 	ASSERT(false);
@@ -290,17 +251,14 @@ void exit(int ret) {
 
 }
 
-SpaceId exec(char *filename, int argc, int argv) {
+SpaceId exec(char *filename, int argv) {
+	
 	OpenFile *executable = fileSystem->Open(filename);
 	AddrSpace *space;
 
 	std::map<int, Process*>* procMap = Process::GetProcMap();
 
-	// printf("Call to exec with argc: %d and argv:\n", argc);
-
-	// for (int i = 0; i < argc; i++) {
-	//	printf("argv[%d]: %s\n", i, ((char**) argv)[i]);
-	// }
+	//printf("argv[%d]: %s (%d)\n", 0, ((char**) argv)[0], ((int)((char **)argv)[0]));
 
 	if (executable == NULL) {
 		printf("SC_Exec Error: Unable to open file %s\n", filename);
@@ -337,9 +295,7 @@ SpaceId exec(char *filename, int argc, int argv) {
 		return -1;
 	}
 
-	// printf("right before set arguments\n");
-	// space->SetArguments(argc, (char**) argv, filename);
-	// printf("right after\n");
+	space->SetArguments(argv, filename);
 
 	thread->space = space;
 	// assign the new space to the thread
@@ -387,4 +343,63 @@ void create(char* filename) {
 	fileSystem->Create(buf, 0);
 }
 
+
+
+int read(int addr, int size, OpenFileId mapped_id) {
+	int read = 0;
+	char buff;
+	bool write;
+	int read_count = 1;
+
+	if (currentThread->fileHandlers->find(mapped_id) != currentThread->fileHandlers->end()) {
+		// its a valid file for us to use
+		OpenFile* fileId = currentThread->fileHandlers->at(mapped_id);
+			// printf("in the else\n");
+			while (read < size && read_count > 0) {
+				if (mapped_id == ConsoleInput) {
+					Read(ConsoleInput, &buff, 1);
+				} else if (mapped_id != ConsoleOutput) {
+					read_count = fileId->Read(&buff, 1);
+				} else {
+					break;
+				}
+				write = UserTranslate::WriteMem(addr + read, 1, (int) buff);
+				read++;
+			}
+	} else {
+		read = -1;
+	}
+
+	return read;
+
+}
+
+/*
+   int write(int addr, int size, OpenFileId mapped_id) {
+   int wrote = 0;
+   int value;
+   char buff;
+   bool read;
+   int write_count = 1;
+
+   if (currentThread->fileHandlers->find(mapped_id) != currentThread->fileHandlers->end()) {
+   OpenFile* fileId = currentThread->fileHandlers->at( mapped_id );
+   while(wrote < size && buff != EOF && write_count > 0) {
+   read = UserTranslate::ReadMem((int) (addr + wrote), 1, &value);
+   buff = value;
+   if (mapped_id == ConsoleOutput) {
+   WriteFile(ConsoleOutput, &buff, 1);
+   } else if (mapped_id != ConsoleInput){
+   write_count = fileId->Write(&buff, 1);
+   } else {
+   break;
+   }
+   wrote++;
+   }
+   } else {
+   wrote = -1;
+   }
+   return wrote;
+   }
+   */
 #endif
