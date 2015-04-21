@@ -368,7 +368,7 @@ void AddrSpace::LoadPage(int vAddr) {
 		pageTable[vPage].physicalPage = newPage;
 		LoadPageFromExecutable(vPage);
 	} else {
-		printf("its: %d\n", pageTable[vPage].physicalPage);
+		printf("physical page %d, vPage %d\n", pageTable[vPage].physicalPage, vPage);
 		ASSERT(false); // shouldn't happen
 	}
 	
@@ -460,13 +460,20 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 		entry.valid = value;
 
 		//read the virtualpage number
-		result = fileId->Write(small_buf, 4);
+		result = fileId->Read(small_buf, 4);
 		if ( result < 4 )
 		{
 			printf("ERROR - write the virtualpage number, %d\n", result);
 			return false;
 		}
 		entry.virtualPage = charToInt(small_buf);
+
+		//dont take a physical page if we weren't using it before
+		if (entry.valid == false)
+		{
+
+			continue;
+		}
 
 		//find an unused page
 		if (entry.physicalPage == NOT_LOADED)
@@ -532,6 +539,7 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 			printf("ERROR - read the contents of the page to the file, %d\n", result);
 			return false;
 		}
+
 	}
 
 	//check to make sure that we have some free pages open still
@@ -607,6 +615,7 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 			printf("ERROR - write the virtualpage number, %d\n", result);
 			return false;
 		}
+		printf("writing virtual page %d %d %d\n", entry.virtualPage, entry.dirty, entry.physicalPage);
 
 		//write the contents of the page to the file
 		result = fileId->Write(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
@@ -617,5 +626,6 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		}
 
 	}
+
 	return true;
 }

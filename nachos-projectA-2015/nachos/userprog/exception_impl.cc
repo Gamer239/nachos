@@ -1,10 +1,22 @@
+
+#ifndef CHANGED
+#define CHANGED
+#endif
 #ifdef CHANGED
 #include "exception_impl.h"
 #include <map>
+#include "../machine/machine.h"
 #include "process.h"
-#include "thread.h"
-#include "system.h"
+#include "../threads/thread.h"
+#include "../threads/system.h"
 #include "exception_utils.h"
+#include "user_translate.h"
+#include "addrspace.h"
+
+extern Machine* machine;	// user program memory and registers
+extern FileSystem  *fileSystem;
+
+
 
 void HandleSyscall(int type) {
 	
@@ -376,6 +388,7 @@ int checkpoint(char* filename)
 
 	if (strlen(filename) <= 0)
 	{
+		printf("filename <= 0 %s\n", filename);
 		return -1;
 	}
 
