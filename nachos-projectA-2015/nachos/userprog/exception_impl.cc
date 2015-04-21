@@ -198,17 +198,17 @@ void HandleSyscall(int type) {
 		case SC_Checkpoint:
 			DEBUG('s', "Call to Syscall Checkpoint (SC_Checkpoint).\n");
 			{
-				//create and open the file
+				//read the address that contains the string
 				addr = machine->ReadRegister(4);
+
+				//fetch the string
 				ReadString(addr, filename);
-				fileSystem->Create(filename, 0);
-				OpenFile* fileId = fileSystem->Open(filename);
 
-				//tell the thread to write itself
-				bool res = currentThread->writeThreadContents( fileId );
+				//run the checkpoint code
+				int ret = checkpoint( filename );
 
-				//close the file
-				delete fileId;
+				//write the return
+				machine->WriteRegister(2, ret);
 			}
 			break;
 
@@ -366,6 +366,55 @@ void create(char* filename) {
 	// we'll add data once we open it
 	printf("gonna create %s\n", buf);
 	fileSystem->Create(buf, 0);
+}
+
+int checkpoint(char* filename)
+{
+	bool res = true;
+	bool exists = true;
+	OpenFile* fileId = fileSystem->Open(filename);
+
+	if (strlen(filename) <= 0)
+	{
+		return -1;
+	}
+
+	if ( fileId == NULL )
+	{
+		//the file doesn't exist create the checkpoint
+		printf("the file doesn't exist\n");
+		fileSystem->Create(filename, 0);
+		OpenFile* fileId = fileSystem->Open(filename);
+		res = currentThread->writeThreadContents( fileId );
+		exists = false;
+	}
+	else
+	{
+		//the file exists, load the snapshot
+		printf("the file exists\n");
+
+		//TODO: when we read on old checkpoint do we need to update the PC since we need to move past this instruction?
+		res = currentThread->readThreadContents( fileId );
+	}
+
+	//close the file
+	if ( fileId != NULL )
+	{
+		delete fileId;
+	}
+
+	if ( res == false )
+	{
+		return -1;
+	}
+	else if ( exists == true )
+	{
+		return 1;
+	}
+
+
+
+	return 0;
 }
 
 #endif

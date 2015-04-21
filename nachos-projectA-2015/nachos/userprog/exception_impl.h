@@ -10,6 +10,7 @@ void exit(int ret);
 SpaceId exec(char* filename, int argc, int argv);
 int join(SpaceId id);
 void create(char* filename);
+int checkpoint(char* filename);
 void HandleSyscall(int type);
 
 #endif

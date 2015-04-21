@@ -19,10 +19,23 @@ void ReadString(int addr, char* buf) {
 	char c;
 	buf[0] = '\0';
 	int i = 0;
+	bool test = false;
 	do {
-		UserTranslate::ReadMem(addr++, 1, (int*) &c);
+		bool res = UserTranslate::ReadMem(addr++, 1, (int*) &c);
 		sprintf(buf + strlen(buf), "%c", c);
-		i++;
+		if (res == false)
+		{
+			test = true;
+		}
+		else if (test == true && res == false)
+		{
+			break;
+		}
+		else
+		{
+			i++;
+		}
+
 	} while (c != '\0' && i < 64);
 }
 

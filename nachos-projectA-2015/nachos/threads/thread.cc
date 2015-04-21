@@ -384,7 +384,7 @@ bool Thread::readThreadContents(OpenFile* fileId)
 {
 	char small_buf[4];
 	int result = 0;
-	char value;
+	int value;
 
 	//stack top
 	result = fileId->Read(small_buf, 4);
@@ -393,7 +393,7 @@ bool Thread::readThreadContents(OpenFile* fileId)
 		printf("read stack top, %d\n", result);
 		return false;
 	}
-	stackTop = (int*)charToInt(small_buf);
+	//stackTop = (int*)charToInt(small_buf);
 
 	//stack bottom
 	result = fileId->Read(small_buf, 4);
@@ -402,7 +402,7 @@ bool Thread::readThreadContents(OpenFile* fileId)
 		printf("read stack bottom, %d \n", result);
 		return false;
 	}
-	stack = (int*)charToInt(small_buf);
+	//stack = (int*)charToInt(small_buf);
 
 	//machine registers
 	for (int i = 0; i < MachineStateSize; i++)
@@ -464,17 +464,23 @@ bool Thread::readThreadContents(OpenFile* fileId)
 	printf("the stack size was found to be %d, stackTop %d, stackbottom %d\n", cur_stack_size, stackTop, stack);
 
 	//read the stack one byte at a time from the bottom up
-	for ( int i = 0 ; i < cur_stack_size; i++)
+	for ( int* i = stackTop; i >= stack && *i != STACK_FENCEPOST; i-=4)
 	{
-		result = fileId->Read(&value, 1);
-		if ( result < 1 )
+		result = fileId->Read(small_buf, 4);
+		if ( result < 4 )
 		{
 			printf("read stack contents, %d\n", result);
 			return false;
 		}
-		*(stack+i) = value;
+		//printf("i think we crashed already, %d, stack top %d, our pos %d, bottom %d value %x\n", i, stackTop, stack+i, stack, charToInt(small_buf));
+		if (*(i) == 0xdeadbeef)
+		{
+			printf("huh\n");
+		}
+		//*(stack+i) = charToInt(small_buf);
 	}
 
+	printf("read stack contents\n");
 
 	return true;
 }
@@ -572,9 +578,9 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	printf("wrote stack size\n");
 
 	//write the stack one byte at a time from the bottom up
-	for ( int i = 0 ; i <= (cur_stack_size/4); i++)
+	for ( int* i = stackTop ; i >= stack && *(i) != STACK_FENCEPOST ; i-=4)
 	{
-		value = *(stack+i);
+		value = *(i);
 		//printf("i think we crashed already, %d, stack top %d, our pos %d, bottom %d\n", i, stackTop, stack+i, stack);
 		intToChar(value, small_buf);
 		result = fileId->Write(small_buf, 4);
