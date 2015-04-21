@@ -384,51 +384,52 @@ bool Thread::readThreadContents(OpenFile* fileId)
 {
 	char small_buf[4];
 	int result = 0;
+	char value;
 
 	//stack top
 	result = fileId->Read(small_buf, 4);
-	stackTop = (int*)charToInt(small_buf);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("read stack top\n");
+		printf("read stack top, %d\n", result);
 		return false;
 	}
+	stackTop = (int*)charToInt(small_buf);
 
 	//stack bottom
 	result = fileId->Read(small_buf, 4);
-	stack = (int*)charToInt(small_buf);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("read stack bottom \n");
+		printf("read stack bottom, %d \n", result);
 		return false;
 	}
+	stack = (int*)charToInt(small_buf);
 
 	//machine registers
 	for (int i = 0; i < MachineStateSize; i++)
 	{
 		result = fileId->Read(small_buf, 4);
-		machineState[i] = charToInt(small_buf);
-		if ( result <= 0 )
+		if ( result < 4 )
 		{
-			printf("read machine registers\n");
+			printf("read machine registers, %d\n", result);
 			return false;
 		}
+		machineState[i] = charToInt(small_buf);
 	}
 
 	//thread priority
 	result = fileId->Read(small_buf, 4);
-	threadPriority = charToInt(small_buf);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("read thread priority\n");
+		printf("read thread priority, %d\n", result);
 		return false;
 	}
+	threadPriority = charToInt(small_buf);
 
 	//name
 	result = fileId->Read(name, 64);
-	if ( result <= 0 )
+	if ( result < 64 )
 	{
-		printf("read name\n");
+		printf("read name, %d\n", result);
 		return false;
 	}
 
@@ -436,22 +437,44 @@ bool Thread::readThreadContents(OpenFile* fileId)
 	for (int i = 0; i < NumTotalRegs; i++)
 	{
 		result = fileId->Read(small_buf, 4);
-		userRegisters[i] = charToInt(small_buf);
-		if ( result <= 0 )
+		if ( result < 4 )
 		{
-			printf("read user registers\n");
+			printf("read user registers, %d\n", result);
 			return false;
 		}
+		userRegisters[i] = charToInt(small_buf);
 	}
 
 	//write the current address space state
 	if (!space->readAddrState(fileId))
 	{
-		printf("read the current address space state\n");
+		printf("read the current address space state, %d\n", result);
 		return false;
 	}
 
 	//TODO:read the stacks contents
+	//read the stack size
+	result = fileId->Read(small_buf, 4);
+	if ( result < 4 )
+	{
+		printf("read stack size, %d\n", result);
+		return false;
+	}
+	int cur_stack_size = charToInt(small_buf);
+	printf("the stack size was found to be %d, stackTop %d, stackbottom %d\n", cur_stack_size, stackTop, stack);
+
+	//read the stack one byte at a time from the bottom up
+	for ( int i = 0 ; i < cur_stack_size; i++)
+	{
+		result = fileId->Read(&value, 1);
+		if ( result < 1 )
+		{
+			printf("read stack contents, %d\n", result);
+			return false;
+		}
+		*(stack+i) = value;
+	}
+
 
 	return true;
 }
@@ -460,22 +483,23 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 {
 	char small_buf[4];
 	int result = 0;
+	int value;
 
 	//stack top
 	intToChar((int)stackTop, small_buf); //TODO: this cast is okay? I want the pointer itself
 	result = fileId->Write(small_buf, 4);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("write stack top\n");
+		printf("write stack top, %d\n", result);
 		return false;
 	}
 
 	//stack bottom
 	intToChar((int)stack, small_buf); //TODO: this cast is okay?
 	result = fileId->Write(small_buf, 4);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("write stack bottom \n");
+		printf("write stack bottom, %d \n", result);
 		return false;
 	}
 
@@ -484,9 +508,9 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	{
 		intToChar(machineState[i], small_buf);
 		result = fileId->Write(small_buf, 4);
-		if ( result <= 0 )
+		if ( result < 4 )
 		{
-			printf("write machine registers\n");
+			printf("write machine registers, %d\n", result);
 			return false;
 		}
 	}
@@ -494,17 +518,17 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	//thread priority
 	intToChar(threadPriority, small_buf);
 	result = fileId->Write(small_buf, 4);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("write thread priority\n");
+		printf("write thread priority, %d\n", result);
 		return false;
 	}
 
 	//name
 	result = fileId->Write(name, 64);
-	if ( result <= 0 )
+	if ( result < 64 )
 	{
-		printf("write name\n");
+		printf("write name, %d\n", result);
 		return false;
 	}
 
@@ -513,9 +537,9 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	{
 		intToChar(userRegisters[i], small_buf);
 		result = fileId->Write(small_buf, 4);
-		if ( result <= 0 )
+		if ( result < 4 )
 		{
-			printf("write user registers\n");
+			printf("write user registers, %d\n", result);
 			return false;
 		}
 	}
@@ -528,6 +552,41 @@ bool Thread::writeThreadContents(OpenFile* fileId)
 	}
 
 	//TODO: write the stack's contents
+	int cur_stack_size = (int)stackTop - (int)stack;
+	printf("the size of the stack is %d with stack top %d and stack %d\n", cur_stack_size, (int)stackTop, (int)stack);
+
+	//write the size of the stack to the file
+	if ( cur_stack_size < 0 )
+	{
+		printf("stack upside down\n");
+		return false;
+	}
+	intToChar(cur_stack_size, small_buf);
+	result = fileId->Write(small_buf, 4);
+	if ( result < 4 )
+	{
+		printf("stack size, %d\n", result);
+		return false;
+	}
+
+	printf("wrote stack size\n");
+
+	//write the stack one byte at a time from the bottom up
+	for ( int i = 0 ; i <= (cur_stack_size/4); i++)
+	{
+		value = *(stack+i);
+		//printf("i think we crashed already, %d, stack top %d, our pos %d, bottom %d\n", i, stackTop, stack+i, stack);
+		intToChar(value, small_buf);
+		result = fileId->Write(small_buf, 4);
+		if ( result < 4 )
+		{
+			printf("stack contents, %d\n", result);
+			return false;
+		}
+	}
+
+	printf("wrote stack contents\n");
+
 
 	return true;
 }

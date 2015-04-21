@@ -48,7 +48,9 @@ int charToInt( char* buf )
 	int num2 = buf[2];
 	int num3 = buf[3];
 
-	result = ( num0 << 24 ) | ( num1 << 16 ) | ( num2 << 8 ) | num3;
+	//printf("buf[0] %x buf[1] %x buf[2] %x buf %x\n", buf[0], buf[1], buf[2], buf[3]);
+
+	result = ( ( num0 << 24) & 0xFF000000 ) | ( ( num1 << 16 ) & 0x00FF0000 ) | ( ( num2 << 8 ) & 0x0000FF00 ) | ( num3 & 0x000000FF );
 
 	return result;
 }

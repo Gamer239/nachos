@@ -413,7 +413,7 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 	//our state back into place
 	if (newNumPages <= 0 || numPages != newNumPages)
 	{
-		printf("ERROR - newNumPages <=0 || numPages != newNumPage\n");
+		printf("ERROR - newNumPages <=0 || numPages != newNumPage, %d, %d\n", newNumPages, numPages);
 		return false;
 	}
 
@@ -423,21 +423,103 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 		//load the current info
 		TranslationEntry entry = pageTable[i];
 
+		//read the dirty bit
+		result = fileId->Read(&value, 1);
+		if ( result < 1 )
+		{
+			printf("ERROR - read the dirty bit, %d\n", result);
+			return false;
+		}
+		entry.dirty = value;
+
+		//read the readOnly status
+		result = fileId->Read(&value, 1);
+		if ( result < 1 )
+		{
+			printf("ERROR - read the readonly status, %d\n", result);
+			return false;
+		}
+		entry.readOnly = value;
+
+		//read the usebool
+		result = fileId->Read(&value, 1);
+		if ( result < 1 )
+		{
+			printf("ERROR - read the usebool, %d\n", result);
+			return false;
+		}
+		entry.use = value;
+
+		//read the valid bit
+		result = fileId->Read(&value, 1);
+		if ( result < 1 )
+		{
+			printf("ERROR - read the valid bit, %d\n", result);
+			return false;
+		}
+		entry.valid = value;
+
+		//read the virtualpage number
+		result = fileId->Write(small_buf, 4);
+		if ( result < 4 )
+		{
+			printf("ERROR - write the virtualpage number, %d\n", result);
+			return false;
+		}
+		entry.virtualPage = charToInt(small_buf);
 
 		//find an unused page
 		if (entry.physicalPage == NOT_LOADED)
 		{
+			//TODO: could we ever have a victim page that was just one that was loaded which then corrupts our system state?
+			if (pageMap->NumClear() > 0)
+			{
+				entry.physicalPage = pageMap->Find(entry.virtualPage);
+			}
+			else
+			{
+				// yes, find victim page
+				// get frame number, and vpn of the page for the
+				// process that holds it.
+				entry.physicalPage = pageMap->GetNextVictim();
 
+				// we now have the frame # that will be replaced.
+				DEBUG('v', "[VMEM] memory full, selecting %d as victim.\n", entry.physicalPage);
+
+				// we need to check the victim page's thread's pagetable
+				// what thread is that?
+				// what vpn is that frame to it?
+				Thread* victimThread = pageMap->curThreads[entry.physicalPage];
+				int victimVPage = pageMap->vPage[entry.physicalPage];
+				pageMap->curThreads[entry.physicalPage] = currentThread;
+				pageMap->vPage[entry.physicalPage] = entry.virtualPage;
+
+				DEBUG('v', "[VMEM] got victim thread, victim vpn %d\n", victimVPage);
+
+				// is victim page dirty?
+				if (victimThread->space->pageTable[victimVPage].dirty) {
+					// yes, store it.
+					DEBUG('r', "[VMEM] victim page %d is dirty, saving to swap\n", victimVPage);
+					victimThread->space->SaveToSwap(victimVPage);
+					victimThread->space->pageTable[victimVPage].physicalPage = IN_SWAP;
+				} else {
+					// no. just mark it as not loaded
+					DEBUG('r', "[VMEM] victim page %d is not dirty\n", victimVPage);
+					victimThread->space->pageTable[victimVPage].physicalPage = NOT_LOADED;
+				}
+				victimThread->space->pageTable[victimVPage].valid = false;
+			}
 		}
 		//its in swap
 		else if ( entry.physicalPage == IN_SWAP )
 		{
-
+			GetFromSwap(entry.virtualPage);
 		}
 		//TODO: Don't assume that it's valid if its not loaded or in swap
 		else
 		{
 			//its loaded for us let's just replace the data with our checkpoint
+			//TODO: we shouldn't need to do anything here for now
 		}
 
 		//save the current info
@@ -445,9 +527,9 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 
 		//read the contents of the page to the file
 		result = fileId->Read(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
-		if ( result <= 0 )
+		if ( result < PageSize )
 		{
-			printf("ERROR - read the contents of the page to the file\n");
+			printf("ERROR - read the contents of the page to the file, %d\n", result);
 			return false;
 		}
 	}
@@ -455,7 +537,7 @@ bool AddrSpace::readAddrState( OpenFile* fileId )
 	//check to make sure that we have some free pages open still
 	if ( pageMap->NumClear() <= 0 )
 	{
-		printf("ERROR - check to make sure that we have some free pages open still\n");
+		printf("ERROR - check to make sure that we have some free pages open still, %d\n", pageMap->NumClear());
 		return false;
 	}
 
@@ -471,9 +553,9 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 	//write the number of pages that we have to the file
 	intToChar(numPages, small_buf);
 	result = fileId->Write(small_buf, 4);
-	if ( result <= 0 )
+	if ( result < 4 )
 	{
-		printf("ERROR - write the number of pages that we have to the file\n");
+		printf("ERROR - write the number of pages that we have to the file, result\n", result);
 		return false;
 	}
 
@@ -484,53 +566,53 @@ bool AddrSpace::writeAddrState( OpenFile* fileId )
 		//write the dirty bit
 		value = entry.dirty;
 		result = fileId->Write(&value, 1);
-		if ( result <= 0 )
+		if ( result < 1 )
 		{
-			printf("ERROR - write the dirty bit\n");
+			printf("ERROR - write the dirty bit, %d\n", result);
 			return false;
 		}
 
 		//write the readOnly status
 		value = entry.readOnly;
 		result = fileId->Write(&value, 1);
-		if ( result <= 0 )
+		if ( result < 1 )
 		{
-			printf("ERROR - write the readonly status\n");
+			printf("ERROR - write the readonly status, %d\n", result);
 			return false;
 		}
 
 		//write the usebool
 		value = entry.use;
 		result = fileId->Write(&value, 1);
-		if ( result <= 0 )
+		if ( result < 1 )
 		{
-			printf("ERROR - write the usebool\n");
+			printf("ERROR - write the usebool, %d\n", result);
 			return false;
 		}
 
 		//write the valid bit
 		value = entry.valid;
 		result = fileId->Write(&value, 1);
-		if ( result <= 0 )
+		if ( result < 1 )
 		{
-			printf("ERROR - write the valid bit\n");
+			printf("ERROR - write the valid bit, %d\n", result);
 			return false;
 		}
 
 		//write the virtualpage number
 		intToChar(entry.virtualPage, small_buf);
 		result = fileId->Write(small_buf, 4);
-		if ( result <= 0 )
+		if ( result < 4 )
 		{
-			printf("ERROR - write the virtualpage number\n");
+			printf("ERROR - write the virtualpage number, %d\n", result);
 			return false;
 		}
 
 		//write the contents of the page to the file
 		result = fileId->Write(&(machine->mainMemory[entry.physicalPage * PageSize]), PageSize);
-		if ( result <= 0 )
+		if ( result < PageSize )
 		{
-			printf("ERROR - write the contents of the page to the file\n");
+			printf("ERROR - write the contents of the page to the file, %d\n", result);
 			return false;
 		}
 
